@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Autonomous Creatures Part 4</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Autonomous Creatures Part 4" />
+<meta name="twitter:description" content="I have changed it so that the creature wraps around the map if it goes out of the window. Before that, I tried to make it so that it bounced back in the opposite direction it hit the wall at, but t...">
+
+<meta name="description" content="I have changed it so that the creature wraps around the map if it goes out of the window. Before that, I tried to make it so that it bounced back in the oppo...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/creatures-part-4">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Autonomous Creatures Part 4</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>I have changed it so that the creature wraps around the map if it goes out of the window. Before that, I tried to make it so that it bounced back in the opposite direction it hit the wall at, but there was a problem. The creature would, everytime without fail, get stuck. I realised this was because if it bounced back, the neural net would still tell it the same thing (almost!) and it would get trapped in a loop. So thus, the wrap:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">600</span>
+
+<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">600</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">600</span>
+    
+<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">600</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span></code></pre></figure>
+
+<p>I’ve also made it so that the creature, upon touching the enemy “dies”.</p>
+
+<p>Furthermore, I’ve completely restructured the whole code so that it’s primed for implementing the genetic algorithm. I’ve added a class called Creature and organised my code from there.</p>
+
+<p>Then, I added a population and currently the creatures spawn and gradually disappear when they hit the enemy. Some of them go in a sorta loop that allows them to avoid the enemy (which isn’t pre-coded, it’s on-the-spot). Others get trapped in a certain place because of conflicting signals. I plan so that these stagnated ones die out of hunger. That will only leave the ones that survive and avoid the enemies.</p>
+
+<p>Here’s it in action:</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/04/creatures.gif"><img src="https://artificialcognition.files.wordpress.com/2015/04/creatures.gif?w=300" alt="creatures" /></a></p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/creatures-part-5" title="NEXT: Project: Autonomous Creatures Part 5">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/creatures-part-3" title="PREV: Project: Autonomous Creatures Part 3">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

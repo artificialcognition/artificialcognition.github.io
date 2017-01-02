@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Utilizing Convolutional Neural Networks to Create Poetry (EDIT: And got Published!)</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Utilizing Convolutional Neural Networks to Create Poetry (EDIT: And got Published!)" />
+<meta name="twitter:description" content="A while ago, I came across Zack’s post entitled “Turning test: passed using computer generated poetry”, who had apparently generated a poem that was accepted into a literary journal. While I though...">
+
+<meta name="description" content="A while ago, I came across Zack’s post entitled “Turning test: passed using computer generated poetry”, who had apparently generated a poem that was accepted...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/the-programmed-poet">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Utilizing Convolutional Neural Networks to Create Poetry (EDIT: And got Published!)</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>A while ago, I came across Zack’s post entitled <a href="https://rpiai.wordpress.com/2015/01/24/turing-test-passed-using-computer-generated-poetry/">“Turning test: passed using computer generated poetry”</a>, who had apparently generated a poem that was accepted into a literary journal. While I thought this was amazing at first, there was a problem. Firstly, I don’t think anyone would consider the program anything close to a proper AGI. Heck, nothing currently is ‘close’. But even so, Zack’s program uses “a Context-free grammar using the notation of Backus-Naur Form”, which I think is a very algorithmic and formulaic way of generating poetry. It resulted in very fuzzy and unclear poems that seem incomprehensible. Out of an anthology of 26 poems that were submitted, only one was published.</p>
+
+<p>With that said, the feat’s quite impressive in itself, and so I decided to attempt to program something that generates AI, with the aim of creating poems that are less vague and more (I don’t know) human? I wanted to use what I already knew, and new tools that I had heard about, in an eclectic approach to solve this task.</p>
+
+<p>Hence, I planned to create poetry using a 4 step process:</p>
+
+<ol>
+  <li>
+    <p><strong>Data Scraping. </strong>Collect a corpus of themed poetry from poetryfoundation.org, the most prestigious poetry literary magazine.</p>
+  </li>
+  <li>
+    <p><strong>Recurrent Neural Net. </strong>Train the RNNs on this corpus, to generate letters that form poetic sentences.</p>
+  </li>
+  <li>
+    <p><strong>Sense Checker. </strong>Check these sentences for if they are grammatically correct and make sense.</p>
+  </li>
+  <li>
+    <p><strong>Genetic Algorithms. </strong>Use GAs to weed out the worst sentences and keep the good sentences. Combines these sentences in various ways in order to form poetry.</p>
+  </li>
+</ol>
+
+<p><strong>Data Scrapping:</strong></p>
+
+<p>How could I generate a successful poem if I didn’t have anything to work with? Hence, I decided to use texts from <a href="http://www.poetryfoundation.org">Poetry</a> magazine, “one of the leading monthly poetry journals in the English-speaking world”.</p>
+
+<p>One thing to note is that I only extracted poems that had the topic “Life Choices” and “Growing Old”. Most of these poems lamented what could have been and regrets in life. Being a boy of 17 years of age, meant that I had a very limited experience of this topic and as such, I would have no clue about how to write such a poem. That was the reason behind that choice, in order to properly test the skills of my “AI”.</p>
+
+<p>As before, I used urllib and <a href="http://www.crummy.com/software/BeautifulSoup/">BeautifulSoup</a>. However, I had a problem: the page would load into an Error:404. I thought the reason behind this was because of the user-agent, so I added that into the code and the problem fixed itself:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">urllib2</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+<span class="n">urlbase</span> <span class="o">=</span> <span class="s">'http://www.poetryfoundation.org/browse/#subject=12&amp;preview=1&amp;poet-birthdate=20&amp;page='</span>
+
+<span class="n">link</span> <span class="o">=</span> <span class="n">urlbase</span> <span class="o">+</span> <span class="s">'1'</span>
+<span class="n">opener</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">()</span>
+<span class="n">opener</span><span class="o">.</span><span class="n">addheaders</span> <span class="o">=</span> <span class="p">[(</span><span class="s">'User-agent'</span><span class="p">,</span> <span class="s">'Mozilla/5.0'</span><span class="p">)]</span></code></pre></figure>
+
+<p>In doing so, I ran into another problem. It would just display ”loading…” in the contents. I realised that the content (i.e, the poems) was loaded using javascript, so I had to install a new library called <a href="http://www.seleniumhq.org">Selenium</a> that literally runs the browser, in order to scrape this data. The code basically goes through a number of indexes of poetry, extracts their links, opens them and saves the poem text in a  text file. Here is the rest of code, using Selenium:</p>
+
+<p><em>extractor.py:</em></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+<span class="kn">from</span> <span class="nn">selenium.webdriver.common.keys</span> <span class="kn">import</span> <span class="n">Keys</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+
+<span class="n">urlbase</span> <span class="o">=</span> <span class="s">'http://www.poetryfoundation.org/browse/#subject=12&amp;preview=1&amp;poet-birthdate=20&amp;page='</span>
+
+<span class="n">poemlinks</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># for pages 1-16, get links to poetry</span>
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">25</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">"getting links... page "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">counter</span><span class="p">)</span>
+    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">driver</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">()</span>    
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">urlbase</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements_by_xpath</span><span class="p">(</span><span class="s">"//div[@id='search-results']/p"</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]:</span>
+        <span class="n">poemlinks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">find_element_by_tag_name</span><span class="p">(</span><span class="s">'a'</span><span class="p">)</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="s">'href'</span><span class="p">))</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="n">poemlinks</span><span class="p">)</span>
+
+<span class="n">corpus</span> <span class="o">=</span> <span class="s">""</span>
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">poemlinks</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"downloading poems... poem "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">counter</span><span class="p">)</span> <span class="o">+</span> <span class="s">"/"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">poemlinks</span><span class="p">))</span>
+    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">driver</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">()</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">driver</span><span class="o">.</span><span class="n">find_elements_by_xpath</span><span class="p">(</span><span class="s">"//div[@id='poem']/div[@class='poem']/*"</span><span class="p">):</span>
+        <span class="n">corpus</span> <span class="o">=</span> <span class="n">corpus</span> <span class="o">+</span> <span class="s">'</span><span class="se">\n</span><span class="s">'</span> <span class="o">+</span> <span class="n">x</span><span class="o">.</span><span class="n">text</span>
+    <span class="n">driver</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">corpus</span> <span class="o">+=</span> <span class="s">'</span><span class="se">\n</span><span class="s">'</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="nb">open</span><span class="p">(</span><span class="s">'input.txt'</span><span class="p">,</span> <span class="s">'w'</span><span class="p">,</span> <span class="s">'utf-8'</span><span class="p">)</span>    
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">corpus</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></code></pre></figure>
+
+<p><strong>Recurrent Neural Net</strong>
+I came across this post <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/">The Unreasonable Effectiveness of Recurrent Neural Networks</a> by Andrej Karpathy, a while ago and I was impressed. The whole concept of recurrent neural nets is interesting, because unlike a ‘traditional’ NN, the input isn’t just manipulated in the hidden layers and exit through the output; instead, the input in RNNs can be looped back and used as input. This results in a rather convoluted system that can do amazing things.</p>
+
+<p>In this case, a single letter is inputed into the net and according to its configuration, more letters are generated according to both what was inputted and what had already been outputted. This means that an RNN can keep in ‘mind’ what it had already generated and if the RNN is large enough, actually make sense. Apparently, Karpathy’s RNNs can generate Shakespearian dialogue, Wikipedia entries, LATEX code and even Linux Source Code. Without getting into the details, I had a fairly good impression that this system could also generate poetry, a capability which I found surprising that it hasn’t been done. (This was actually where the idea for this post came from!).</p>
+
+<p>In order for me to train the network on my gathered poems, I had to install not only the <a href="https://github.com/karpathy/char-rnn">library</a> but also <a href="http://www.lua.org">Lua</a> and <a href="http://torch.ch">Torch</a> as well as some other things. It took quite a bit of time and frustration! But in the end, it worked!</p>
+
+<p>The text file containing the input poems (I don’t exactly recall how many poems there were, but it numbered in the hundreds) had a size of 1.4 MB. This was large enough for the neural net to be used at its default setting.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>th train.lua -data_dir data/some_folder -gpuid -1
+</code></pre>
+</div>
+
+<p>Using that command in the terminal, I trained the RNN on the training set and it took almost an hour! I was waiting in anticipation and in the end, it worked, sorta!</p>
+
+<p>The program trained a net that could generate pseudo-poetry. With a length of 50000 characters and a ‘temperature’ of 0.75, here is a sample of what I got:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Where the same from forest numbers
+the conversation for my hands
+In the bright same childhood sighs rages,
+
+And he seems to do on a hillside rocking
+a scate of sunlight
+and sparrold, singing his straight and the human heart.
+
+and all spore at the dark wood.
+</code></pre>
+</div>
+
+<p>Here, I realised that out of the many sentences generated, only a couple made any sense. This is why there needed to be a next step, in order to delete of the sentences that couldn’t be used.</p>
+
+<p><strong>Sense Checker</strong></p>
+
+<p>This was a fairly basic piece of code that made use of the <a href="https://pypi.python.org/pypi/language-check">Language Check</a> library, parsed the sentences, and got rid of the sentences that had any spelling/grammar errors. I did, however, let one error go past: it wouldn’t get rid of the sentence if it only had one error and that error was an uncapitalised starting.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">c</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">'words.txt'</span><span class="p">,</span> <span class="s">'r'</span><span class="p">)</span>
+<span class="n">w</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">'sentences.txt'</span><span class="p">,</span> <span class="s">'w'</span><span class="p">)</span>
+<span class="n">corpus</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+<span class="kn">import</span> <span class="nn">language_check</span>
+<span class="n">tool</span> <span class="o">=</span> <span class="n">language_check</span><span class="o">.</span><span class="n">LanguageTool</span><span class="p">(</span><span class="s">'en-US'</span><span class="p">)</span>
+
+<span class="n">corpus</span> <span class="o">=</span> <span class="n">corpus</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">senseful</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">blah</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">corpus</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="s">''</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">blah</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">'utf-8'</span><span class="p">))</span>
+    <span class="k">except</span> <span class="nb">UnicodeDecodeError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ruleId</span> <span class="o">==</span> <span class="s">'UPPERCASE_SENTENCE_START'</span><span class="p">)</span> <span class="ow">or</span> \
+    <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">print</span> <span class="n">counter</span>
+        <span class="n">senseful</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">blah</span><span class="o">+</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">blah</span><span class="o">+</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span></code></pre></figure>
+
+<p>After running the sentences through this checker, I was left with a number of relatively good sentences that were unstructured.</p>
+
+<p><strong>Genetic Algorithms</strong></p>
+
+<p>In order to structure the computer-made sentences, I decided to use GAs. By assigning each sentence it’s own fitness and then combining them into two-sentence-parts, it would then be possible to determine the best possible combinations, given enough time.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="n">w</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">'sentences.txt'</span><span class="p">,</span> <span class="s">'r'</span><span class="p">)</span>
+<span class="n">sentences</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">'</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DNA</span><span class="p">:</span>
+    <span class="s">"""genotype for 2-lined parts of the poem"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">goodness</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">genes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sentences</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">show</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">sentences</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+
+<span class="c"># 0 no sense at all</span>
+<span class="c"># 1 one good sentence</span>
+<span class="c"># 2 a few good sentences</span>
+<span class="c"># 3 all good sentences</span>
+<span class="c"># 4 makes sense</span>
+<span class="c"># 5 amazing</span>
+
+    <span class="k">def</span> <span class="nf">fitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">goodness</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span><span class="o">+</span><span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">DNA</span><span class="p">()</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">midpoint</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sentences</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DNA</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">cycle</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">i</span><span class="o">.</span><span class="n">fitness</span><span class="p">()</span>
+
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">fitness</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span> 
+
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"generation: "</span><span class="p">,</span> <span class="n">counter</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">rating</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">"rate: "</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">goodness</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rating</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">cycle</span><span class="p">()</span></code></pre></figure>
+
+<p>This process took AGES, but eventually I got it to work. After saving the good sentence pairs, I then worked on 4-sentence-parts and then more. Some potentially good pairs had to even be edited in order for them to make sense. This is part of the biggest flaw of my whole process: that the content of the poem is directly the result of my own selection of what makes the best poem. However, even if the GA part inherently brings in human opinion (me) into poetry selection, it is quite unavoidable (in my opinion). Unless a program can determine what is “poetic” and how a poem ought to be structured, I do not see any way of avoiding this. Unlike Zack, whose poems are almost randomly done, mine are at least in some ways, more “creative”. This is because, they learn from the best poems and use what they learn to generate their own, new and innovative phrases. I think that’s the biggest difference, even if my process has some flaws.</p>
+
+<p>Anyway, after all that effort, the end result is interesting. I had the time to make it create 2 poems, shown below (I made up the title though and the white space.</p>
+
+<p><strong>Publication:</strong></p>
+
+<p>After the heartening results, I decided to submit the poems into a few literary journals. So far, Forgotten Remembrances, has been accepted by <a href="http://www.calliopemagazine.com">Calliope Magazine</a>. The editor, had however made a few edits (apparently my white spaces were unnecessary!).</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/08/screen-region-2015-08-22-at-19-51-11.png"><img src="https://artificialcognition.files.wordpress.com/2015/08/screen-region-2015-08-22-at-19-51-11.png?w=300" alt="Screen Region 2015-08-22 at 19.51.11" /></a></p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/08/screen-region-2015-08-22-at-19-52-24.png"><img src="https://artificialcognition.files.wordpress.com/2015/08/screen-region-2015-08-22-at-19-52-24.png?w=300" alt="Screen Region 2015-08-22 at 19.52.24" /></a></p>
+
+<p>I was eventually also sent a release form, which I signed and now the poem is waiting to be published!</p>
+
+<p><strong>Edit</strong>: Corvus Review has also decided to publish the other poem entitled Tick Tock. It can be seen in the Fall Issue of 2015; here’s a screenshot:</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/08/screen-region-2015-10-03-at-12-55-08.png"><img src="https://artificialcognition.files.wordpress.com/2015/08/screen-region-2015-10-03-at-12-55-08.png?w=231" alt="Screen Region 2015-10-03 at 12.55.08" /></a></p>
+
+<p>So, what does this mean? Well, since the acceptance rate of both of these magazines are both around 50%, I guess I can say that the poems created by this program are of average to above-average quality. You could also say that poem generation isn’t also limited to humans, though creativity arguable.</p>
+
+<p>Also, the initials of the pen name. <strong>A</strong> <strong>I</strong>? Get it? Yeah… just a daft inside-joke :P</p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/playing-with-shakespeare-programming-language-spl" title="NEXT: Project: Shakespeare Programming Language (SPL)">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/snake-playing-it-with-a" title="PREV: Project: Using the A* Algorithm to Play Snake">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

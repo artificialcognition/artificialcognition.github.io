@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Using the A* Algorithm to Play Snake</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Using the A* Algorithm to Play Snake" />
+<meta name="twitter:description" content="To get started with A, I decided to do something simple. Using this resource and bitSnake (by Fredrik Rosenqvist), I decided to create an agent that plays the game using A. A* is pretty simple to u...">
+
+<meta name="description" content="To get started with A, I decided to do something simple. Using this resource and bitSnake (by Fredrik Rosenqvist), I decided to create an agent that plays th...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/snake-playing-it-with-a">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Using the A* Algorithm to Play Snake</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>To get started with A<em>, I decided to do something simple. Using <a href="http://www.redblobgames.com/pathfinding/a-star/introduction.html">this resource</a> and <a href="http://www.pygame.org/project-bitSnake-2158-.html">bitSnake</a> (by Fredrik Rosenqvist), I decided to create an agent that plays the game using A</em>. A* is pretty simple to understand, it basically chooses a path by taking into consideration the distance from the start and the estimated distance from the goal.</p>
+
+<p>Here is a video demonstrating the agent that I made:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eVGyIiZZvzo?rel=0" frameborder="0" allowfullscreen=""></iframe>
+
+<p>Bitsnake’s code took a little while to understand but I decided to write over it. The only file that I modified was game.py and the edits are between the “BEGIN EDIT” and “END EDIT”. Everything else was written and belongs to Rosenqvist.</p>
+
+<p>Basically, I had to set up the algorithm, run it after 5 frames at the start and whenever the snake eats a piece of food, make the snake change direction based on the path calculated and draw the path on the screen. It was quite a bit of work, but it turned out pretty well didn’t it? :) There’s a bit of lag I guess because it has to calculate the path with such a large grid. I don’t think this lag will be very good for Spelunky, but I think there’ll be a smaller search space per moment in that game and hopefully C++ will make it run faster (idk, we’ll see).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#! /usr/bin/env python</span>
+<span class="kn">from</span> <span class="nn">game_calc</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">Queue</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="k">def</span> <span class="nf">game</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">clock</span><span class="p">):</span>
+
+    <span class="c"># START EDIT</span>
+    <span class="n">allnodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">982</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">684</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+            <span class="n">allnodes</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+
+    <span class="n">dirs</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">10</span><span class="p">]]</span>
+
+    <span class="k">def</span> <span class="nf">neighbours</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="n">neighbour</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">node</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="k">if</span> <span class="n">neighbour</span> <span class="ow">in</span> <span class="n">allnodes</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">neighbour</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="n">food</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c"># Manhattan distance</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="nb">abs</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c"># END EDIT</span>
+
+    <span class="n">running</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">BLUE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">205</span><span class="p">)</span>
+    <span class="n">upper_border</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">44</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">right_border</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">992</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">648</span><span class="p">)</span>
+    <span class="n">left_border</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">60</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">648</span><span class="p">)</span>
+    <span class="n">down_border</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">694</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="n">snake</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">512</span><span class="p">,</span><span class="mi">344</span><span class="p">),(</span><span class="mi">512</span><span class="p">,</span><span class="mi">354</span><span class="p">),(</span><span class="mi">512</span><span class="p">,</span><span class="mi">364</span><span class="p">),(</span><span class="mi">512</span><span class="p">,</span><span class="mi">374</span><span class="p">),(</span><span class="mi">512</span><span class="p">,</span><span class="mi">384</span><span class="p">)]</span>
+
+    <span class="n">direction</span> <span class="o">=</span> <span class="s">'UP'</span>
+
+    <span class="n">bonus_timer</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">food</span> <span class="o">=</span> <span class="n">new_food</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>
+    <span class="n">bonus</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">eaten</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">eaten_cooldown</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="n">x_change</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">y_change</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">font</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">'font.ttf'</span><span class="p">),</span> <span class="mi">28</span><span class="p">)</span>
+    <span class="n">countdown_font</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">'font.ttf'</span><span class="p">),</span> <span class="mi">100</span><span class="p">)</span>
+
+    <span class="n">up_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">right_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">down_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">left_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="n">countdown</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="c"># BEGIN EDIT</span>
+    <span class="n">findnewpath</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">startcount</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">onpath</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="c"># END EDIT</span>
+
+    <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+        <span class="c"># BEGIN EDIT</span>
+        <span class="n">startcount</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">findnewpath</span> <span class="o">==</span> <span class="bp">True</span> <span class="ow">and</span> <span class="n">startcount</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">allnodes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">982</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">684</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+                    <span class="n">allnodes</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+
+            <span class="c"># get rid of snake blocks from available nodes</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">snake</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                <span class="n">allnodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+            <span class="n">frontier</span> <span class="o">=</span> <span class="n">PriorityQueue</span><span class="p">()</span>
+            <span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">came_from</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">cost_so_far</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">came_from</span><span class="p">[</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">cost_so_far</span><span class="p">[</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">while</span> <span class="n">frontier</span><span class="p">:</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">frontier</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="n">food</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">neighbours</span><span class="p">(</span><span class="n">current</span><span class="p">):</span>
+                    <span class="n">n</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                    <span class="n">newcost</span> <span class="o">=</span> <span class="n">cost_so_far</span><span class="p">[</span><span class="n">current</span><span class="p">]</span> <span class="o">+</span> <span class="mi">10</span>
+                    <span class="k">if</span> <span class="n">n</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cost_so_far</span> <span class="ow">or</span> <span class="n">newcost</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="n">cost_so_far</span><span class="p">[</span><span class="n">n</span><span class="p">]:</span>
+                        <span class="n">cost_so_far</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">newcost</span>
+                        <span class="n">priority</span> <span class="o">=</span> <span class="n">newcost</span> <span class="o">+</span> <span class="n">h</span><span class="p">(</span><span class="n">food</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+                        <span class="n">frontier</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">priority</span><span class="p">)</span>
+                        <span class="n">came_from</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">current</span>
+
+            <span class="n">current</span> <span class="o">=</span> <span class="n">food</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="p">[</span><span class="n">current</span><span class="p">]</span>
+            <span class="k">print</span> <span class="n">path</span>
+
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">500</span><span class="p">):</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">came_from</span><span class="p">[</span><span class="n">current</span><span class="p">]</span>
+                <span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="k">break</span>
+
+            <span class="n">path</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+            <span class="n">findnewpath</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># END EDIT</span>
+
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+                    <span class="n">running</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYDOWN</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
+                        <span class="n">running</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_UP</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'DOWN'</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">right_pressed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">left_pressed</span><span class="p">:</span>
+                        <span class="n">direction</span> <span class="o">=</span> <span class="s">'UP'</span>
+                        <span class="n">up_pressed</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_DOWN</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'UP'</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">right_pressed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">left_pressed</span><span class="p">:</span>
+                        <span class="n">direction</span> <span class="o">=</span> <span class="s">'DOWN'</span>
+                        <span class="n">down_pressed</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_RIGHT</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'LEFT'</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">up_pressed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">down_pressed</span><span class="p">:</span>
+                        <span class="n">direction</span> <span class="o">=</span> <span class="s">'RIGHT'</span>
+                        <span class="n">right_pressed</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_LEFT</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'RIGHT'</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">up_pressed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">down_pressed</span><span class="p">:</span>
+                        <span class="n">direction</span> <span class="o">=</span> <span class="s">'LEFT'</span>
+                        <span class="n">left_pressed</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">KEYUP</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_DOWN</span><span class="p">:</span>
+                            <span class="bp">None</span>
+                        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_UP</span><span class="p">:</span>
+                            <span class="bp">None</span>
+                        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_RIGHT</span><span class="p">:</span>
+                            <span class="bp">None</span>
+                        <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">K_LEFT</span><span class="p">:</span>
+                            <span class="bp">None</span>
+        <span class="n">up_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">right_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">down_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">left_pressed</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'RIGHT'</span><span class="p">:</span>
+            <span class="n">x_change</span> <span class="o">=</span> <span class="mi">10</span>
+            <span class="n">y_change</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'LEFT'</span><span class="p">:</span>
+            <span class="n">x_change</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+            <span class="n">y_change</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'UP'</span><span class="p">:</span>
+            <span class="n">x_change</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">y_change</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+        <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">'DOWN'</span><span class="p">:</span>
+            <span class="n">x_change</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">y_change</span> <span class="o">=</span> <span class="mi">10</span>
+
+        <span class="c"># BEGIN EDIT</span>
+        <span class="k">if</span> <span class="n">startcount</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">onpath</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">x_change</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">y_change</span> <span class="o">=</span> <span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">onpath</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="n">findnewpath</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c"># END EDIT</span>
+
+        <span class="n">status</span> <span class="o">=</span> <span class="n">check_ahead</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">x_change</span><span class="p">,</span> <span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">y_change</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s">'NOTHING'</span> <span class="ow">or</span> <span class="n">status</span> <span class="o">==</span> <span class="s">'EAT'</span><span class="p">:</span>
+            <span class="n">snake</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,(</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">x_change</span><span class="p">,</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">y_change</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s">'EAT'</span><span class="p">:</span>
+            <span class="n">eaten</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">eaten_cooldown</span> <span class="o">=</span> <span class="n">eaten_cooldown</span> <span class="o">+</span> <span class="mi">4</span>
+            <span class="n">food</span> <span class="o">=</span> <span class="n">new_food</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span> <span class="o">==</span> <span class="mi">8</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">bonus</span><span class="p">:</span>
+                <span class="n">bonus</span> <span class="o">=</span> <span class="n">new_food</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span> <span class="p">[</span><span class="n">food</span><span class="p">])</span>
+                <span class="n">bonus_timer</span> <span class="o">=</span> <span class="mi">5</span>
+
+            <span class="c"># BEGIN EDIT</span>
+
+            <span class="n">findnewpath</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="c"># END EDIT</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s">'BONUS'</span><span class="p">:</span>
+            <span class="n">bonus</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">score</span> <span class="o">+=</span> <span class="mi">6</span>
+            <span class="n">eaten_cooldown</span> <span class="o">+=</span> <span class="mi">8</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">eaten</span> <span class="ow">and</span> <span class="n">eaten_cooldown</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">snake</span> <span class="o">=</span> <span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">eaten</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">eaten_cooldown</span> <span class="o">=</span> <span class="n">eaten_cooldown</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s">'GAME_OVER'</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">score</span>
+        <span class="k">if</span> <span class="n">bonus_timer</span><span class="p">:</span>
+            <span class="n">bonus_timer</span> <span class="o">=</span> <span class="n">bonus_timer</span> <span class="o">-</span> <span class="p">(</span><span class="n">clock</span><span class="o">.</span><span class="n">get_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bonus_timer</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">bonus</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="n">bonus_timer</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">screen</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span><span class="n">BLUE</span><span class="p">,</span><span class="n">upper_border</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span><span class="n">BLUE</span><span class="p">,</span><span class="n">right_border</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span><span class="n">BLUE</span><span class="p">,</span><span class="n">left_border</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span><span class="n">BLUE</span><span class="p">,</span><span class="n">down_border</span><span class="p">)</span>
+
+        <span class="c"># BEGIN EDIT</span>
+        <span class="k">if</span> <span class="n">startcount</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,(</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">((</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)))</span>
+        <span class="c"># END EDIT</span>
+
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,(</span><span class="mi">35</span><span class="p">,</span><span class="mi">142</span><span class="p">,</span><span class="mi">35</span><span class="p">),</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">bonus</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,(</span><span class="mi">255</span><span class="p">,</span><span class="mi">215</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">bonus</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">bonus</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+            <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">bonus_timer</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span><span class="bp">False</span><span class="p">,(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">0</span><span class="p">)),</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+        <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="n">Score</span><span class="p">:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">score</span><span class="p">),</span><span class="bp">False</span><span class="p">,(</span><span class="mi">255</span><span class="p">,</span><span class="mi">255</span><span class="p">,</span><span class="mi">0</span><span class="p">)),</span> <span class="p">(</span><span class="mi">900</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">dot</span> <span class="ow">in</span> <span class="n">snake</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span><span class="n">WHITE</span><span class="p">,</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">dot</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">dot</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,</span><span class="n">BLUE</span><span class="p">,</span><span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span><span class="n">snake</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">countdown</span><span class="p">:</span>
+            <span class="n">update_rect</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Rect</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span><span class="mi">350</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+            <span class="n">countdown</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">screen</span><span class="p">,(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span><span class="n">update_rect</span><span class="p">)</span>
+                <span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">countdown_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span><span class="bp">False</span><span class="p">,</span><span class="n">BLUE</span><span class="p">),</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span><span class="mi">350</span><span class="p">))</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">update_rect</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="c">#print(clock.get_fps())</span>
+        <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/the-programmed-poet" title="NEXT: Project: Utilizing Convolutional Neural Networks to Create Poetry (EDIT: And got Published!)">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/chatbot-part-deux" title="PREV: Project: Training a Basic Chatbot Part 2">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

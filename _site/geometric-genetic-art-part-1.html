@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Creating Visual Art with Genetic Algorithms Part 1</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Creating Visual Art with Genetic Algorithms Part 1" />
+<meta name="twitter:description" content="After seeing this collection of geometric designs, I remembered something that I was going to do. Genetic art, or rather evolving pieces of art.">
+
+<meta name="description" content="After seeing this collection of geometric designs, I remembered something that I was going to do. Genetic art, or rather evolving pieces of art.">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/geometric-genetic-art-part-1">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Creating Visual Art with Genetic Algorithms Part 1</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>After seeing <a href="http://www.noupe.com/inspiration/showcases/gorgeous-geometric-designs.html">this collection of geometric designs</a>, I remembered something that I was going to do. Genetic art, or rather evolving pieces of art.</p>
+
+<p>The idea came to me when I was looking into what AI could be used to replicate. Something like creativity. I’m quite into geometric art, like the ones in the link above, so I wondered if I could replicate that using genetic algorithms.</p>
+
+<p>I started out with a plan:</p>
+<ul>
+  <li>
+    <p>Initiate population (create drawings, that each contained 50 triangles of random vertices, colours, and transparencies).</p>
+  </li>
+  <li>
+    <p>Calculate the fitness of each drawing by testing how much it matched an original picture, pixel-per-pixel.</p>
+  </li>
+  <li>
+    <p>Mate the ones that are most fit.</p>
+  </li>
+  <li>
+    <p>Mutate the children.</p>
+  </li>
+  <li>
+    <p>Repeat.</p>
+  </li>
+</ul>
+
+<p>This was the target drawing:</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2016/01/bird.jpg" alt="bird.jpg" /></p>
+
+<p>It took me a whole day to test and debug, and one of the major problems I encountered was that the fitness function was inefficient. I looked online for a bit of info and adapted mine so that it would only change one triangle per mutation and to not use cross-overs.</p>
+
+<p>During the day, I also actually learnt a lot of Python and things you can do with the Pygame library.</p>
+
+<p>For example:</p>
+
+<p>To create transparent triangles in Pygame, you actually need to create another surface and blitz that surface onto the main surface.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>  
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">best</span><span class="o">.</span><span class="n">triangles</span><span class="p">:</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></code></pre></figure>
+
+<p>You can also take a screenshot of the Pygame surface like so:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span> <span class="o">+</span> <span class="s">".jpeg"</span><span class="p">)</span></code></pre></figure>
+
+<p>Anyway, the code takes forever to run. I wish I had more processing power or one of Google’s supercomputers (drool…. :o ) I’ll post an update showing the progress and what the result looks like. It’ll take a while, and I may have to leave the computer on overnight.</p>
+
+<p>Here’s the final code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">pygame</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">pygame.gfxdraw</span> <span class="kn">as</span> <span class="nn">gfx</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"bird.jpg"</span><span class="p">)</span>
+<span class="n">totalx</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">totaly</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span><span class="n">totaly</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Art'</span><span class="p">)</span>
+
+<span class="n">trigno</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">pop_no</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">BLACK</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">diff</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">c</span>
+
+<span class="k">class</span> <span class="nc">Triangle</span><span class="p">:</span>
+    <span class="s">"""Triangles that make up each Drawing"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">))]</span>        
+
+<span class="k">class</span> <span class="nc">Drawing</span><span class="p">:</span>
+    <span class="s">"""Pieces of art"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">trigno</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">Triangle</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c"># calculates fitness via how different each pixel's color is</span>
+        <span class="n">totaldiff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">totaldiff</span> <span class="o">+=</span> <span class="n">diff</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">getpixel</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)),</span>
+                <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">get_at</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))[:</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">totaldiff</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">trigno</span><span class="p">):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">])</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pick_index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">trigno</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">change</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">change</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">colors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+                <span class="n">colors</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">change</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">p2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">p3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">changex</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">totalx</span><span class="p">)</span>
+            <span class="n">changey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">totaly</span><span class="p">)</span>
+            <span class="n">change</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">]</span>
+            <span class="n">change</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">changex</span><span class="p">,</span> <span class="n">changey</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">change</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pop_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Drawing</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">minfit</span><span class="p">(</span><span class="n">drawing</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">drawing</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">record</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+
+    <span class="k">print</span> <span class="s">"Generation: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="c"># calculating fitness...</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>    
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">triangles</span><span class="p">:</span>
+            <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">d</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+        <span class="k">print</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="o">+</span> <span class="s">": "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c"># choosing best...</span>
+
+    <span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">minfit</span><span class="p">)</span>
+    <span class="n">record</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+
+    <span class="c"># drawing...    </span>
+
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>  
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">best</span><span class="o">.</span><span class="n">triangles</span><span class="p">:</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="c"># creating mating pool... </span>
+
+    <span class="n">st</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">triangles</span>
+
+    <span class="n">c1</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">trigno</span><span class="p">):</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c1</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c2</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">trigno</span><span class="p">):</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c2</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c3</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">trigno</span><span class="p">):</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c3</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c4</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">trigno</span><span class="p">):</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c4</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c3</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c4</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gen</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span> <span class="o">+</span> <span class="s">".jpeg"</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="n">record</span>
+
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/geometric-genetic-art-part-2" title="NEXT: Project: Creating Visual Art with Genetic Algorithms Part 2">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/playing-with-shakespeare-programming-language-spl" title="PREV: Project: Shakespeare Programming Language (SPL)">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

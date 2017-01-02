@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Autonomous Creatures Part 1</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Autonomous Creatures Part 1" />
+<meta name="twitter:description" content="So, I decided to try out that idea I had a few posts ago, combining both neural networks and genetic algorithms. This is gonna be pretty complicated, if it works, so I’m gonna break it down into sm...">
+
+<meta name="description" content="So, I decided to try out that idea I had a few posts ago, combining both neural networks and genetic algorithms. This is gonna be pretty complicated, if it w...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/creatures-part-1">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Autonomous Creatures Part 1</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>So, I decided to try out that idea I had a few posts ago, combining both neural networks and genetic algorithms. This is gonna be pretty complicated, if it works, so I’m gonna break it down into smaller portions to do.</p>
+
+<p>Today, I didn’t do much. I basically set up everything, plopped a square thing in the centre as the creature, and thought about how it would move and scan the field for food/enemies.</p>
+
+<p>Using a bit of maths, I think I can divide the playing field into 16 areas which would then be scanned and then the distance for each object could be calculated pretty easily. This info would then be fed into the neural net for it to do whatever it does.</p>
+
+<p>Behold, my artistic masterpiece…</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/02/grid.png"><img src="https://artificialcognition.files.wordpress.com/2015/02/grid.png?w=300" alt="My artistic masterpiece... " /></a></p>
+
+<p>Anything further on, I still haven’t decided on. But here’s the code so far:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pygame</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">fpsClock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Ship'</span><span class="p">)</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="n">creature</span> <span class="o">=</span> <span class="n">Rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">critx</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">crity</span> <span class="o">=</span> <span class="mi">300</span>
+<span class="n">creature</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">critx</span><span class="p">,</span> <span class="n">crity</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">creature</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">fpsClock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">FPS</span><span class="p">)</span></code></pre></figure>
+
+<p>And here’s what it looks like right now, a lone square in the centre in the abyss:</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/02/window-2015-02-10-at-21-49-07.png"><img src="https://artificialcognition.files.wordpress.com/2015/02/window-2015-02-10-at-21-49-07.png?w=291" alt="And here's what it looks like right now, a lone square in the centre in the abyss." /></a></p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/creatures-part-2" title="NEXT: Project: Autonomous Creatures Part 2">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/travelling-salesman-problem-part-2" title="PREV: Project: The Travelling Salesman Problem Part 2">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: The Travelling Salesman Problem Part 2</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: The Travelling Salesman Problem Part 2" />
+<meta name="twitter:description" content="No matter how I alter the population or the mutation rate, the distance seems to get stuck around a distance of 8000 and a shape that it seems to stay in. I suspected that the mutation function did...">
+
+<meta name="description" content="No matter how I alter the population or the mutation rate, the distance seems to get stuck around a distance of 8000 and a shape that it seems to stay in. I ...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/travelling-salesman-problem-part-2">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: The Travelling Salesman Problem Part 2</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>No matter how I alter the population or the mutation rate, the distance seems to get stuck around a distance of 8000 and a shape that it seems to stay in. I suspected that the mutation function didn’t made the “shape” the easiest permutation and the highest fitness in the beginning, so it stayed that way.</p>
+
+<p>I changed the mutate function so that instead of swapping two random genes, it would pick genes and then randomly choose to replace them with the other chosen genes:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">indexs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tomutate</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="n">indexs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indexs</span><span class="p">:</span>
+            <span class="n">tomutate</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indexs</span><span class="p">:</span>
+            <span class="n">choiceindex</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tomutate</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tomutate</span><span class="p">[</span><span class="n">choiceindex</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">tomutate</span><span class="p">[</span><span class="n">choiceindex</span><span class="p">]</span></code></pre></figure>
+
+<p>I then tried it out at 5% mutation and a population of 100. It got stuck at around a distance of 8000. Increasing the mutation rate to 7% got it closer. Increasing it to 10% got it even, even closer, down to 6700. I tried out a couple of different combos and I think this is the best it can do. This was a bit frustrating, but it made me realise that genetic algorithms have their limits, sadly. The initial population’s genes is important though, because that affects, I think, if it will reach the final solution.</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/02/screen-region-2015-02-05-at-17-58-08.png"><img src="https://artificialcognition.files.wordpress.com/2015/02/screen-region-2015-02-05-at-17-58-08.png?w=300" alt="So close!" /></a></p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/creatures-part-1" title="NEXT: Project: Autonomous Creatures Part 1">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/the-travelling-salesman-problem-djibouti-edition" title="PREV: Project: The Travelling Salesman Problem Part 1">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Autonomous Creatures Part 5</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Autonomous Creatures Part 5" />
+<meta name="twitter:description" content="Ok, so I’ve added a starvation code to it, so that the creatures now starve if the the absolute value of the average of their last five directional moves is less than 0.2. This ensures that they ar...">
+
+<meta name="description" content="Ok, so I’ve added a starvation code to it, so that the creatures now starve if the the absolute value of the average of their last five directional moves is ...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/creatures-part-5">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Autonomous Creatures Part 5</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>Ok, so I’ve added a starvation code to it, so that the creatures now starve if the the absolute value of the average of their last five directional moves is less than 0.2. This ensures that they are removed from the population. I still haven’t implemented the genetic algorithm yet, but I’ve added random enemies that generate at the start of the program. Even without the GAs, I’m often left with one or two that actually avoid the enemies properly (they turn before they hit them!!). I’m thinking that by randomising the enemies every say 5 turns, I’ll get even better results.</p>
+
+<p>I then decided to implement the genetic algorithm. I decided that the fitness of each creature would be the amount of time it lasts. I also looked into how the weights are distributed for the neural nets and found <a href="http://stats.stackexchange.com/questions/7758/on-connection-weights-in-an-artificial-neural-network">this</a>. It says that the mean is 0 and the standard distribution is around 0.3. I decided to check it using a simple program:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pybrain.tools.shortcuts</span> <span class="kn">import</span> <span class="n">buildNetwork</span>
+
+<span class="n">maxno</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">pop</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">nets</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="n">no</span> <span class="o">=</span> <span class="n">nets</span> <span class="o">*</span> <span class="mi">59</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nets</span><span class="p">):</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="n">buildNetwork</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+        <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+<span class="n">sumx</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">sumx2</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pop</span><span class="p">:</span>
+    <span class="n">sumx</span> <span class="o">+=</span> <span class="n">x</span>
+    <span class="n">sumx2</span> <span class="o">+=</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
+
+<span class="k">print</span> <span class="s">"mean: "</span><span class="p">,</span> <span class="n">sumx</span><span class="o">/</span><span class="n">no</span>
+<span class="k">print</span> <span class="s">"std deviation: "</span><span class="p">,</span> <span class="p">(</span><span class="n">sumx2</span><span class="o">/</span><span class="n">no</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span></code></pre></figure>
+
+<p>I can say with pretty good confidence that the mean is indeed 0, but the standard deviation is 1.</p>
+
+<p>Then I implemented the complete genetic algorithm, tweaked a few settings and here’s that:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pygame</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pybrain.tools.shortcuts</span> <span class="kn">import</span> <span class="n">buildNetwork</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">fpsClock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Creature'</span><span class="p">)</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="n">directions</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),(</span><span class="mf">0.7</span><span class="p">,</span><span class="o">-</span><span class="mf">0.7</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.7</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.7</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mf">0.7</span><span class="p">,</span><span class="o">-</span><span class="mf">0.7</span><span class="p">)]</span>
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<span class="k">class</span> <span class="nc">Creature</span><span class="p">:</span>
+    <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span><span class="n">creatures</span> <span class="n">that</span> <span class="n">move</span> <span class="n">around</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">buildNetwork</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span> <span class="c"># bulid a neural net for the crit</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="n">directions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="c"># use largest output for direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">calcsection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">):</span>
+        <span class="c"># radians from north</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ex</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="o">-</span><span class="n">ey</span><span class="p">]))</span> 
+        <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ex</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span><span class="n">cy</span><span class="o">-</span><span class="n">ey</span><span class="p">])))))</span>
+
+        <span class="k">if</span> <span class="n">cx</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="mi">360</span> <span class="o">-</span> <span class="n">a</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        
+        <span class="c"># sections of input</span>
+        <span class="n">sections</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">22.5</span><span class="p">,</span> <span class="mf">67.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">67.5</span><span class="p">,</span> <span class="mf">112.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">112.5</span><span class="p">,</span> <span class="mf">157.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">157.5</span><span class="p">,</span> <span class="mf">202.5</span><span class="p">),</span> 
+        <span class="p">(</span><span class="mf">202.5</span><span class="p">,</span> <span class="mf">247.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">247.5</span><span class="p">,</span> <span class="mf">292.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">292.5</span><span class="p">,</span> <span class="mf">337.5</span><span class="p">)]</span>
+    
+        <span class="c"># finds out which section the enemy is in, based on the angle</span>
+        <span class="k">if</span> <span class="n">angle</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mf">337.5</span> <span class="ow">or</span> <span class="n">angle</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="mf">22.5</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sections</span><span class="p">)):</span>
+                <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">sections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">angle</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="n">a</span> <span class="ow">and</span> <span class="n">angle</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="n">b</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> 
+
+    <span class="k">def</span> <span class="nf">calcdirection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">netin</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enemies</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">enemx</span><span class="p">,</span> <span class="n">enemy</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="n">inindex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcsection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">enemx</span><span class="p">,</span> <span class="n">enemy</span><span class="p">)</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="n">enemx</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">-</span><span class="n">enemy</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">netin</span><span class="p">[</span><span class="n">inindex</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">distance</span><span class="p">)</span> <span class="o">*</span> <span class="mi">200</span>
+        <span class="k">return</span> <span class="n">netin</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">netin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcdirection</span><span class="p">()</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">netin</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="n">directions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="c"># wraps the creature around the map</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">600</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">600</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c">#checks for contact with enemy</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enemies</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">enemx</span><span class="p">,</span> <span class="n">enemy</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">enemx</span><span class="o">-</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">+</span><span class="mi">10</span> <span class="ow">and</span> <span class="n">enemx</span><span class="o">+</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">enemy</span><span class="o">-</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">+</span><span class="mi">10</span> <span class="ow">and</span> <span class="n">enemy</span><span class="o">+</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">-</span><span class="mi">10</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="bp">True</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">)</span>
+
+        <span class="c">#checks for starvation</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">sumx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">sumy</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]:</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">l</span>
+                <span class="n">sumx</span> <span class="o">+=</span> <span class="n">x</span>
+                <span class="n">sumy</span> <span class="o">+=</span> <span class="n">y</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sumx</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="mf">0.2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sumy</span><span class="o">/</span><span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="mf">0.2</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="bp">True</span>
+            
+        <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="c"># moves the creature every frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">x</span><span class="o">*</span><span class="mi">5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">y</span><span class="o">*</span><span class="mi">5</span>
+        
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Creature</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> 
+            <span class="n">partner</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Creature</span><span class="p">())</span>
+
+<span class="n">genlen</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">survivors</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="c">#sets up scoreboard</span>
+    <span class="n">fontObj</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="s">'freesansbold.ttf'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+    <span class="n">textSurfaceObj</span> <span class="o">=</span> <span class="n">fontObj</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span><span class="n">Gen</span><span class="p">:</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span> <span class="o">+</span> 
+    <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span>        <span class="n">Last</span> <span class="n">Gen</span> <span class="n">Survivors</span><span class="p">:</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">survivors</span><span class="p">),</span> <span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">textRectObj</span> <span class="o">=</span> <span class="n">textSurfaceObj</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+    <span class="n">textRectObj</span><span class="o">.</span><span class="n">bottomright</span> <span class="o">=</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="n">gen</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;:</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">quot</span><span class="p">;,</span> <span class="n">survivors</span>
+
+    <span class="n">survivors</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#sets up however many random enemies</span>
+    <span class="n">enemies</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
+        <span class="n">enemies</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">600</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">600</span><span class="p">)))</span>
+
+    <span class="k">while</span> <span class="n">count</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="n">genlen</span><span class="p">:</span>
+
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">textSurfaceObj</span><span class="p">,</span> <span class="n">textRectObj</span><span class="p">)</span> <span class="c"># shows scoreboard</span>
+    
+        <span class="c"># if alive, population is drawn up</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dead</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">ob</span> <span class="o">=</span> <span class="n">Rect</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">ob</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">c</span><span class="o">.</span><span class="n">ob</span><span class="p">)</span>
+        
+        <span class="c"># enemies are drawn</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enemies</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">e</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    
+        <span class="c"># if alive, updates the population</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dead</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+                <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+        
+        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="n">fpsClock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">FPS</span><span class="p">)</span>
+
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dead</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+            <span class="n">survivors</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span></code></pre></figure>
+
+<p>I noticed something interesting. Some of the creatures were moving along the centre, up/down or left/right. I realised that my code set the enemies so that they would avoid the centres (because I didn’t want them to spawn on an enemy). I didn’t realise that the whole column or row would be free. So I fixed that, but it still didn’t work; I needed to optimise the net.</p>
+
+<p>I realised that the fault lied in that my creatures moved too crudely, that the net wasn’t working well enough. Instead of avoiding enemies, I decided to convert them into food so that it would have a better fitness function and I thought that the net would work better.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pygame</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pybrain.tools.shortcuts</span> <span class="kn">import</span> <span class="n">buildNetwork</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">fpsClock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Creature'</span><span class="p">)</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="n">directions</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),(</span><span class="mf">0.7</span><span class="p">,</span><span class="o">-</span><span class="mf">0.7</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.7</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="o">-</span><span class="mf">0.7</span><span class="p">,</span><span class="mf">0.7</span><span class="p">),(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="o">-</span><span class="mf">0.7</span><span class="p">,</span><span class="o">-</span><span class="mf">0.7</span><span class="p">)]</span>
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="k">class</span> <span class="nc">Creature</span><span class="p">:</span>
+    <span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="n">creatures</span> <span class="n">that</span> <span class="n">move</span> <span class="n">around</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">buildNetwork</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span> <span class="c"># build a neural net for the crit</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="n">directions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="c"># use largest output for direction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">calcsection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">):</span>
+        <span class="c"># radians from north</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ex</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="o">-</span><span class="n">ey</span><span class="p">]))</span> 
+        <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ex</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span><span class="n">cy</span><span class="o">-</span><span class="n">ey</span><span class="p">])))))</span>
+
+        <span class="k">if</span> <span class="n">cx</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="mi">360</span> <span class="o">-</span> <span class="n">a</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        
+        <span class="c">#sections of input</span>
+        <span class="n">sections</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">mini</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">maxi</span> <span class="o">=</span> <span class="mi">360</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span>
+
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span><span class="p">):</span>
+            <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">mini</span><span class="p">,</span> <span class="n">maxi</span><span class="p">))</span>
+            <span class="n">mini</span> <span class="o">=</span> <span class="n">maxi</span>
+            <span class="n">maxi</span> <span class="o">+=</span> <span class="mi">360</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span>
+    
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sections</span><span class="p">)):</span>
+            <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">sections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">angle</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="n">a</span> <span class="ow">and</span> <span class="n">angle</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="n">b</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">i</span>
+
+    <span class="k">def</span> <span class="nf">calcdirection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">netin</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sectionno</span>
+
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">food</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">foodx</span><span class="p">,</span> <span class="n">foody</span><span class="p">)</span> <span class="o">=</span> <span class="n">f</span>
+            <span class="n">inindex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcsection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">foodx</span><span class="p">,</span> <span class="n">foody</span><span class="p">)</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="n">foodx</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">-</span><span class="n">foody</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">netin</span><span class="p">[</span><span class="n">inindex</span><span class="p">]</span> <span class="o">+=</span> <span class="p">((</span><span class="mi">1</span><span class="o">/</span><span class="n">distance</span><span class="p">)</span> <span class="o">*</span> <span class="mi">300</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">netin</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">netin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calcdirection</span><span class="p">()</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">netin</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="o">=</span> <span class="n">directions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="c"># wraps the creature around the map</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">600</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">600</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c">#checks for contact with food</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">food</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">foodx</span><span class="p">,</span> <span class="n">foody</span><span class="p">)</span> <span class="o">=</span> <span class="n">f</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">foodx</span><span class="o">-</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">+</span><span class="mi">10</span> <span class="ow">and</span> <span class="n">foodx</span><span class="o">+</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">foody</span><span class="o">-</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">+</span><span class="mi">10</span> <span class="ow">and</span> <span class="n">foody</span><span class="o">+</span><span class="mi">10</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">-</span><span class="mi">10</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">food</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">direction</span><span class="p">)</span>
+
+        <span class="c">#checks for starvation</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">20</span><span class="p">:</span>
+            <span class="n">sumx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">sumy</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">lastmoves</span><span class="p">[</span><span class="o">-</span><span class="mi">20</span><span class="p">:]:</span>
+                <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">l</span>
+                <span class="n">sumx</span> <span class="o">+=</span> <span class="n">x</span>
+                <span class="n">sumy</span> <span class="o">+=</span> <span class="n">y</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sumx</span><span class="o">/</span><span class="mi">20</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">sumy</span><span class="o">/</span><span class="mi">20</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dead</span> <span class="o">=</span> <span class="bp">True</span>
+            
+        <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">direction</span> <span class="c"># moves the creature every frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">x</span><span class="o">*</span><span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">y</span><span class="o">*</span><span class="mi">10</span>
+        
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Creature</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> 
+            <span class="n">partner</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Creature</span><span class="p">())</span>
+
+<span class="n">genlen</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="c">#sets up scoreboard</span>
+    <span class="n">fontObj</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="s">'freesansbold.ttf'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+    <span class="n">textSurfaceObj</span> <span class="o">=</span> <span class="n">fontObj</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span><span class="n">Gen</span><span class="p">:</span> <span class="o">&amp;</span><span class="n">quot</span><span class="p">;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">),</span> <span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">textRectObj</span> <span class="o">=</span> <span class="n">textSurfaceObj</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+    <span class="n">textRectObj</span><span class="o">.</span><span class="n">bottomright</span> <span class="o">=</span> <span class="p">(</span><span class="mi">600</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+
+    <span class="c">#sets up however many random foodies</span>
+    <span class="n">food</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">600</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">600</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">280</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">320</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">gt</span><span class="p">;</span><span class="o">=</span> <span class="mi">280</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">=</span> <span class="mi">320</span><span class="p">):</span>
+            <span class="n">food</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+    <span class="k">while</span> <span class="n">count</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="n">genlen</span><span class="p">:</span>
+
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">textSurfaceObj</span><span class="p">,</span> <span class="n">textRectObj</span><span class="p">)</span> <span class="c"># shows scoreboard</span>
+    
+        <span class="c"># if alive, population is drawn up</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dead</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">ob</span> <span class="o">=</span> <span class="n">Rect</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">ob</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">c</span><span class="o">.</span><span class="n">ob</span><span class="p">)</span>
+        
+        <span class="c"># food is drawn</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">food</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="n">f</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+    
+        <span class="c"># if alive, updates the population</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">dead</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    
+        <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+                <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+                <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+        
+        <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="n">fpsClock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">FPS</span><span class="p">)</span>
+
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="n">foodcount</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">c</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+        <span class="n">foodcount</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="nb">max</span><span class="p">(</span><span class="n">foodcount</span><span class="p">)</span>
+            
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span></code></pre></figure>
+
+<p>And it worked. The creatures moved to get the food. I realised that the starvation code was a little bit redundant. But, once some other creature got the morsel of food, the creature got “unstuck”.</p>
+
+<p>What I found really interesting was that the first maximum score was relatively high. But then, as more fit creatures began to emerge, the score decreased. I guess it makes sense, because as the resources decreased because the adept creatures increased, the individual score would also decrease. So that was cool. :)</p>
+
+<p>I guess this is the final part of this project. It was fun.</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/04/window-2015-04-15-at-20-50-07.png"><img src="https://artificialcognition.files.wordpress.com/2015/04/window-2015-04-15-at-20-50-07.png?w=291" alt="Window 2015-04-15 at 20.50.07" /></a></p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/having-a-go-at-stylometry" title="NEXT: Project: Stylometry Part 1">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/creatures-part-4" title="PREV: Project: Autonomous Creatures Part 4">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

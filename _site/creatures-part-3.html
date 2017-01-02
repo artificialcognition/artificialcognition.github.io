@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Autonomous Creatures Part 3</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Autonomous Creatures Part 3" />
+<meta name="twitter:description" content="The creature now has enemies! Oh no, how evil of me… &gt;:)">
+
+<meta name="description" content="The creature now has enemies! Oh no, how evil of me… &gt;:)">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/creatures-part-3">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Autonomous Creatures Part 3</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>The creature now has enemies! Oh no, how evil of me… &gt;:)</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/04/window-2015-04-09-at-16-56-05.png"><img src="https://artificialcognition.files.wordpress.com/2015/04/window-2015-04-09-at-16-56-05.png?w=291" alt="&gt;:D" /></a></p>
+
+<p>I’ve also solved the problem of calculating and inputting the co-ordinates of the enemy into the neural net. Basically, the number of radians from north is calculated for each of the enemy, and then this information is converted into sections (like a pie), before going into the neural net of the creature.</p>
+
+<p>A problem I had was that the angle calculated using numpy resulted sometimes (when the creature was to the right of the enemy)  in an angle that was from the north, but from the other side (anti-clockwise instead of clock-wise). This was quite easily solved though.</p>
+
+<p>Here’s that piece of code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">calcsection</span><span class="p">(</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">ex</span><span class="p">,</span> <span class="n">ey</span><span class="p">):</span>
+    <span class="c"># radians from north</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ex</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="o">-</span><span class="n">ey</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ex</span><span class="o">-</span><span class="n">cx</span><span class="p">,</span> <span class="n">cy</span><span class="o">-</span><span class="n">ey</span><span class="p">])))))</span>
+
+    <span class="k">if</span> <span class="n">cx</span> <span class="o">&gt;=</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="mi">360</span> <span class="o">-</span> <span class="n">a</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="mi">180</span><span class="o">/</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+    
+    <span class="c"># sections of input</span>
+    <span class="n">sections</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">22.5</span><span class="p">,</span> <span class="mf">67.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">67.5</span><span class="p">,</span> <span class="mf">112.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">112.5</span><span class="p">,</span> <span class="mf">157.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">157.5</span><span class="p">,</span> <span class="mf">202.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">202.5</span><span class="p">,</span> <span class="mf">247.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">247.5</span><span class="p">,</span> <span class="mf">292.5</span><span class="p">),</span> <span class="p">(</span><span class="mf">292.5</span><span class="p">,</span> <span class="mf">337.5</span><span class="p">)]</span>
+    
+    <span class="c"># finds out which section the enemy is in, based on the angle</span>
+    <span class="k">if</span> <span class="n">angle</span> <span class="o">&gt;</span> <span class="mf">337.5</span> <span class="ow">or</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="mf">22.5</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sections</span><span class="p">)):</span>
+            <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">sections</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">angle</span> <span class="o">&gt;</span> <span class="n">a</span> <span class="ow">and</span> <span class="n">angle</span> <span class="o">&lt;</span> <span class="n">b</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="c"># inindex will go into the neural net</span></code></pre></figure>
+
+<p>So, when the simulation is run, the section for each enemy is calculated before being entered into the neural network with a set input of 100 (I was just picking a relatively large number). However, I noticed that sometimes the creature would just become stuck because every enemy affected it the same way with no regard for proximity. So, I used some basic maths and worked out the distance for each one and used that as the input into the neural network.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">enemies</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">enemx</span><span class="p">,</span> <span class="n">enemy</span><span class="p">)</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="n">inindex</span> <span class="o">=</span> <span class="n">calcsection</span><span class="p">(</span><span class="n">critx</span><span class="p">,</span> <span class="n">crity</span><span class="p">,</span> <span class="n">enemx</span><span class="p">,</span> <span class="n">enemy</span><span class="p">)</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">critx</span><span class="o">-</span><span class="n">enemx</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="n">crity</span><span class="o">-</span><span class="n">enemy</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">netin</span><span class="p">[</span><span class="n">inindex</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span><span class="o">/</span><span class="n">distance</span> <span class="o">*</span> <span class="mi">1000</span>
+
+    <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">netin</span><span class="p">))</span>
+    <span class="n">direction</span> <span class="o">=</span> <span class="n">directions</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">direction</span> <span class="c"># moves the creature every frame</span>
+    <span class="n">critx</span> <span class="o">+=</span> <span class="n">x</span>
+    <span class="n">crity</span> <span class="o">+=</span> <span class="n">y</span></code></pre></figure>
+
+<p>Now, we just need to apply genetic algorithms to it, which should be pretty formulaic. Yay!</p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/creatures-part-4" title="NEXT: Project: Autonomous Creatures Part 4">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/creatures-part-2" title="PREV: Project: Autonomous Creatures Part 2">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

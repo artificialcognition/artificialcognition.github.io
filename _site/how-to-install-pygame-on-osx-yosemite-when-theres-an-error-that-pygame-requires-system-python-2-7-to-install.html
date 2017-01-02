@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>How to Install Pygame on OSX Yosemite (when there's an error that pygame requires System Python 2.7 to install)</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="How to Install Pygame on OSX Yosemite (when there's an error that pygame requires System Python 2.7 to install)" />
+<meta name="twitter:description" content="When I was trying to install Pygame today, I tried to use the installer but out popped this error:">
+
+<meta name="description" content="When I was trying to install Pygame today, I tried to use the installer but out popped this error:">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/how-to-install-pygame-on-osx-yosemite-when-theres-an-error-that-pygame-requires-system-python-2-7-to-install">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>How to Install Pygame on OSX Yosemite (when there's an error that pygame requires System Python 2.7 to install)</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>When I was trying to install Pygame today, I tried to use the installer but out popped this error:</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-04-at-13-57-41.png?w=300" alt="The ERROR..." /></p>
+
+<blockquote>pygame 1.9.1 release can't be installed on this disk.
+pygame requires System Python 2.7 to install.</blockquote>
+
+<p>This was frustrating so I used my google foo and found<a href="http://stackoverflow.com/questions/21806723/pygame-installation-fails-due-to-requirement-of-system-python-2-7-even-though-i"> a stackoverflow page</a>, exactly my problem. Now, I have to admit, it took me pathetically about half an hour to figure it out, even though the solution was ON that page, albeit somewhat obscured (at least to me), I just didn’t realise it.</p>
+
+<p>I tried using homebrew, which for some reason needed to be reinstalled and then tried to do various things based on other links I found.</p>
+
+<p>When that all failed, I looked back and found that once I installed XQuartz and used the MacOS 10.7 build, it worked. Here’s what you only have to do:</p>
+
+<p><strong>Step 1: Make sure you have Homebrew and install XQuartz in Terminal</strong></p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>brew install Caskroom/cask/xquartz
+</code></pre>
+</div>
+
+<p><strong>Step 2: Install Pygame with <a href="http://pygame.org/ftp/pygame-1.9.1release.tar.gz">this</a>.</strong></p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/smart-ships" title="NEXT: Project: Smart Ships Part 1">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/guis-and-games" title="PREV: Thoughts: Using PyGame as a GUI Interface">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

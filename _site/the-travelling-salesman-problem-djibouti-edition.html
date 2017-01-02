@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: The Travelling Salesman Problem Part 1</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: The Travelling Salesman Problem Part 1" />
+<meta name="twitter:description" content="I’ve heard about the Travelling Salesman Problem a while ago, but hadn’t looked into it till now. I wanted to try solving it using genetic algorithms, to see if I can.">
+
+<meta name="description" content="I’ve heard about the Travelling Salesman Problem a while ago, but hadn’t looked into it till now. I wanted to try solving it using genetic algorithms, to see...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/the-travelling-salesman-problem-djibouti-edition">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: The Travelling Salesman Problem Part 1</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>I’ve heard about the <a href="http://en.wikipedia.org/wiki/Travelling_salesman_problem">Travelling Salesman Problem</a> a while ago, but hadn’t looked into it till now. I wanted to try solving it using genetic algorithms, to see if I can.</p>
+
+<p><strong>Basically, here’s the problem:</strong></p>
+
+<ul>
+  <li>
+    <p>You are given a list of cities and the distance between them.</p>
+  </li>
+  <li>
+    <p>The salesman has to visit each city, only once, and return to the original city.</p>
+  </li>
+  <li>
+    <p>Find the shortest distance required.</p>
+  </li>
+</ul>
+
+<p><img src="http://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Flag_of_Djibouti.svg/250px-Flag_of_Djibouti.svg.png" alt="" /></p>
+
+<p>So, I looked for data sets online for the TSP and found this <a href="http://www.math.uwaterloo.ca/tsp/world/countries.html">site</a>. I chose Djibouti as it only had 38 cities, which I think is more than enough to try out with. With the data set provided, as well as the optimum solution, I went to work…</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/djpoints.gif"><img src="https://artificialcognition.files.wordpress.com/2015/01/djpoints.gif?w=279" alt="djpoints" /></a></p>
+
+<p>Shown above, is the graphed version <a href="http://www.math.uwaterloo.ca/tsp/world/djpoints.html">here</a>. The data points are given <a href="http://www.math.uwaterloo.ca/tsp/world/dj38.tsp">here</a>.</p>
+
+<p>Unfortunately, I found the data set hard to use in it’s raw form, so I did this to convert it into a form that was usable:</p>
+
+<p>I converted the string of numbers into a list of coordinates, which was then divided into node, x-coordinate, and y-coordinate. The node number was unnecessary, so it was removed. The strings were then converted into floats.</p>
+
+<p>The floats were then manipulated so that they could be used as coordinates by pygame. By subtracting a number from every co-ord, the distance between them would remain unchanged.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">data</span> <span class="o">=</span> <span class="s">"""1 11003.611100 42102.500000,
+2 11108.611100 42373.888900,
+3 11133.333300 42885.833300,
+4 11155.833300 42712.500000,
+5 11183.333300 42933.333300,
+6 11297.500000 42853.333300,
+7 11310.277800 42929.444400,
+8 11416.666700 42983.333300,
+9 11423.888900 43000.277800,
+10 11438.333300 42057.222200,
+11 11461.111100 43252.777800,
+12 11485.555600 43187.222200,
+13 11503.055600 42855.277800,
+14 11511.388900 42106.388900,
+15 11522.222200 42841.944400,
+16 11569.444400 43136.666700,
+17 11583.333300 43150.000000,
+18 11595.000000 43148.055600,
+19 11600.000000 43150.000000,
+20 11690.555600 42686.666700,
+21 11715.833300 41836.111100,
+22 11751.111100 42814.444400,
+23 11770.277800 42651.944400,
+24 11785.277800 42884.444400,
+25 11822.777800 42673.611100,
+26 11846.944400 42660.555600,
+27 11963.055600 43290.555600,
+28 11973.055600 43026.111100,
+29 12058.333300 42195.555600,
+30 12149.444400 42477.500000,
+31 12286.944400 43355.555600,
+32 12300.000000 42433.333300,
+33 12355.833300 43156.388900,
+34 12363.333300 43189.166700,
+35 12372.777800 42711.388900,
+36 12386.666700 43334.722200,
+37 12421.666700 42895.555600,
+38 12645.000000 42973.333300
+"""</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">",</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">38</span><span class="p">):</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">10800</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">41500</span></code></pre></figure>
+
+<p>I further manipulated the points by dividing all co-ordinates by 3, so that they could fit on the screen.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span></code></pre></figure>
+
+<p>Once I rendered the nodes in Pygame, however, they didn’t match up with the one in the image. I realised that the difference was that their render used co-ordinates that started at the bottom left, and that it wouldn’t make a difference, so I just kept it that way.</p>
+
+<p>I created each route, in the population, with a list that randomly chose from the cities once, including the first city.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">38</span><span class="p">]</span>  <span class="c"># make a list of choices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">route</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">37</span><span class="p">):</span> <span class="c"># pick a choice 37 times</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+            <span class="k">del</span> <span class="n">choices</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="c"># self.route contains town 1 and 37 towns in rand order</span>
+        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">route</span></code></pre></figure>
+
+<p>The fitness function was then calculated using the distance formula (which I decided to implement this time, instead of importing numpy:</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2015/01/distance-formula4.png" alt="distance-formula4" /></p>
+
+<p>Since self.route didn’t contain the original city, at the end, it also had to be added.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">si</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">37</span><span class="p">):</span> <span class="c"># si = second index</span>
+            <span class="n">distance</span> <span class="o">+=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="n">distance</span> <span class="o">+=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">37</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">37</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span></code></pre></figure>
+
+<p>The fitness function took a little tinkering. But by using the reciprocal of the distance, converting it to a number &gt; 1 and then raising it to the power of 15, I made it so that the lower the distance, the greater the fitness.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">        <span class="n">distance</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
+        <span class="k">print</span> <span class="p">((</span><span class="mf">1.0</span><span class="o">/</span><span class="n">distance</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">1000000000</span><span class="p">)</span><span class="o">**</span><span class="mi">15</span></code></pre></figure>
+
+<p>Now here was the really hard part. The customary cross-over function wouldn’t’ve worked, since you could only visit each city once. If a midpoint was chosen and then split along it, the different cities would likely result in cities placed more than once in the genes.</p>
+
+<p>Hence, I thought of creating another “used choices” list, which stores the choices already made. And, instead of picking a midpoint, each index would be randomly chosen from the two parents unless it was already on the list of used choices.</p>
+
+<p>I thought this was all good and worked until I ran into a problem:</p>
+
+<p>Parent 1: A B C
+Parent 2: B C A
+Possible child: A C (unable to continue)</p>
+
+<p>Using this algorithm, it would’ve chosen randomly on the first index, between A and B. If it chose A, then A would also be placed on the used choices list. The next index would also be randomly chosen. But, because only A was on the list, it would still randomly select from both. Thus, if it chose C, then the next choice can’t be made as both C and A are on the used choices.</p>
+
+<p>What to do then? I thought of creating two lists instead, one of chosen choices and one of the previously unchosen choices instead. If one of the choices have already been unchosen, then that choice would be the unchosen one. Then if both choices have not been unchosen, then it would check with the chosen choices.</p>
+
+<p>1st choice: A (randomly chosen)
+List of unchosen: B</p>
+
+<p>2nd choice: B (forced)
+List of unchosen: B, C</p>
+
+<p>3rd choice: C (forced)
+List of unchosen: B, C, A</p>
+
+<p>Maybe that was obvious, or maybe someone’s already done it that way, but I’m still proud of it and proud that I figured it out.</p>
+
+<p>And yet, it still didn’t work, which I realised was a fault of this algorithm again and could not be solved without completely going back to the basics. So I remedied the few duplicates by setting up a deadlock list that would take in these pairs and then choose randomly assign the choices that weren’t chosen, at the end. I realise that this isn’t a true cross-over between the two parents, but since the duplicates are quite low in number, it shouldn’t make that much of a difference.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">DNA</span><span class="p">()</span>
+        <span class="n">unchosen</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">deadlock</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)):</span>
+            <span class="n">choices</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">partner</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            
+            <span class="k">if</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">unchosen</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">unchosen</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]):</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">deadlock</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>   <span class="c"># not choice gets appended to unchosen</span>
+                <span class="n">unchosen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">unchosen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        
+        <span class="n">notchosen</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">:</span>
+                <span class="n">notchosen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">deadlock</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">notchosen</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">notchosen</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">notchosen</span><span class="p">[</span><span class="n">index</span><span class="p">]</span></code></pre></figure>
+
+<p>Again, the mutation function wouldn’t work if I just copied the generic mutation function. If I randomly mutated a city into another, there would be duplicates. This was easily solved, by simply swapping both cities. The mutation rate would have to be lowered, since each mutation would result in two changes.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">placeholder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">placeholder</span></code></pre></figure>
+
+<p>Other than the above functions, the rest of the genetic algorithm was fairly simple to implement. One thing of note was that the lines were drawn, using a list comprehension:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="n">bestpoints</span> <span class="o">=</span> <span class="p">[[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="mi">3</span><span class="p">)]</span> <span class="k">for</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">route</span><span class="p">]</span>
+    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">lines</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="bp">True</span><span class="p">,</span> <span class="n">bestpoints</span><span class="p">)</span></code></pre></figure>
+
+<p>When I ran it the first time, I thought it worked and I was so happy. But I realised that as it would slow down, until it got to around the seventh generation and ground to a stop. It took me longer than I would admit to find out the reason. I tried optimising it, little things like moving stuff around, using xrange, but it kept not working. I finally realised that it was the fitness function at fault. The lower the distance, the greater the fitness value. In fact, it worked too well and the fitness value eventually went over the roof, which incredibly increased the length of the mating list, until it was too long. I simply adjusted the fitness function like so, and it worked:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span><span class="o">/</span><span class="n">distance</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">1000000000</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span></code></pre></figure>
+
+<p>The program still doesn’t go to the optimum distance of 6600 but gets to around 7100, which is pretty close. Here’s the full code, and I’ll try to see if I can optimise it even further tomorrow.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pygame</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">fpsClock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">700</span><span class="p">,</span> <span class="mi">700</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Travelling Salesman Problem: Djibouti Edition'</span><span class="p">)</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="s">"""1 11003.611100 42102.500000,
+2 11108.611100 42373.888900,
+3 11133.333300 42885.833300,
+4 11155.833300 42712.500000,
+5 11183.333300 42933.333300,
+6 11297.500000 42853.333300,
+7 11310.277800 42929.444400,
+8 11416.666700 42983.333300,
+9 11423.888900 43000.277800,
+10 11438.333300 42057.222200,
+11 11461.111100 43252.777800,
+12 11485.555600 43187.222200,
+13 11503.055600 42855.277800,
+14 11511.388900 42106.388900,
+15 11522.222200 42841.944400,
+16 11569.444400 43136.666700,
+17 11583.333300 43150.000000,
+18 11595.000000 43148.055600,
+19 11600.000000 43150.000000,
+20 11690.555600 42686.666700,
+21 11715.833300 41836.111100,
+22 11751.111100 42814.444400,
+23 11770.277800 42651.944400,
+24 11785.277800 42884.444400,
+25 11822.777800 42673.611100,
+26 11846.944400 42660.555600,
+27 11963.055600 43290.555600,
+28 11973.055600 43026.111100,
+29 12058.333300 42195.555600,
+30 12149.444400 42477.500000,
+31 12286.944400 43355.555600,
+32 12300.000000 42433.333300,
+33 12355.833300 43156.388900,
+34 12363.333300 43189.166700,
+35 12372.777800 42711.388900,
+36 12386.666700 43334.722200,
+37 12421.666700 42895.555600,
+38 12645.000000 42973.333300
+"""</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">",</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">38</span><span class="p">):</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">10800</span>
+    <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">41500</span>
+
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.03</span>
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="k">class</span> <span class="nc">DNA</span><span class="p">:</span>
+    <span class="s">"""DNA of a route"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">38</span><span class="p">]</span>  <span class="c"># make a list of choices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">route</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">37</span><span class="p">):</span> <span class="c"># pick a choice 37 times</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+            <span class="k">del</span> <span class="n">choices</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="c"># self.route contains town 1 and 37 towns in rand order</span>
+
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">si</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">37</span><span class="p">):</span> <span class="c"># si = second index</span>
+            <span class="n">distance</span> <span class="o">+=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">si</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="n">distance</span> <span class="o">+=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">37</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">37</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distance</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span><span class="o">/</span><span class="n">distance</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mi">1000000000</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">DNA</span><span class="p">()</span>
+        <span class="n">unchosen</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">deadlock</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)):</span>
+            <span class="n">choices</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">partner</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+            
+            <span class="k">if</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">unchosen</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">unchosen</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]):</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">deadlock</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">choices</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>   <span class="c"># not choice gets appended to unchosen</span>
+                <span class="n">unchosen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">unchosen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        
+        <span class="n">notchosen</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">:</span>
+                <span class="n">notchosen</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">deadlock</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">notchosen</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">notchosen</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">notchosen</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">child</span>
+    
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">placeholder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">route</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">placeholder</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>               <span class="c"># Creates the population filled with DNA</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DNA</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">maxfit</span><span class="p">(</span><span class="n">thing</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">thing</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">i</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+        
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span>
+
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+
+    
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+
+    <span class="n">main</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">circle</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">distance</span>
+    <span class="n">bestpoints</span> <span class="o">=</span> <span class="p">[[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="o">/</span><span class="mi">3</span><span class="p">)]</span> <span class="k">for</span> <span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">route</span><span class="p">]</span>
+    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">lines</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="bp">True</span><span class="p">,</span> <span class="n">bestpoints</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">fpsClock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">FPS</span><span class="p">)</span></code></pre></figure>
+
+<p>Distance: ~7100:</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/window-2015-01-30-at-22-34-53.png"><img src="https://artificialcognition.files.wordpress.com/2015/01/window-2015-01-30-at-22-34-53.png?w=292" alt="Distance: 7100ish" /></a></p>
+
+<p>Optimum Distance: 6600:</p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/djtour.gif"><img src="https://artificialcognition.files.wordpress.com/2015/01/djtour.gif?w=300" alt="Optimum Distance" /></a></p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/travelling-salesman-problem-part-2" title="NEXT: Project: The Travelling Salesman Problem Part 2">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/boxcar2d-idea" title="PREV: Thoughts: BoxCar2D">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

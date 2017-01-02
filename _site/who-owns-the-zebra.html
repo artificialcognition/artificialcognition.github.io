@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Solving Einstein's Puzzle with Python-Constraint</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Solving Einstein's Puzzle with Python-Constraint" />
+<meta name="twitter:description" content="I’ve known about this problem for a very long time now, and I solved it manually years ago, but it took ages. Also known by other names such as Einstein’s Puzzle, the Zebra Puzzle is a logic puzzle...">
+
+<meta name="description" content="I’ve known about this problem for a very long time now, and I solved it manually years ago, but it took ages. Also known by other names such as Einstein’s Pu...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/who-owns-the-zebra">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Solving Einstein's Puzzle with Python-Constraint</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>I’ve known about this problem for a very long time now, and I solved it manually years ago, but it took ages. Also known by other names such as Einstein’s Puzzle, the <a href="https://en.wikipedia.org/wiki/Zebra_Puzzle">Zebra Puzzle</a> is a logic puzzle that gives you a set of clues and ask you to thus deduce who owns the zebra.</p>
+
+<p>Here is the original puzzle from Life International in 1962:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>1. There are five houses.
+2. The Englishman lives in the red house.
+3. The Spaniard owns the dog.
+4. Coffee is drunk in the green house.
+5. The Ukrainian drinks tea.
+6. The green house is immediately to the right of the ivory house.
+7. The Old Gold smoker owns snails.
+8. Kools are smoked in the yellow house.
+9. Milk is drunk in the middle house.
+10. The Norwegian lives in the first house.
+11. The man who smokes Chesterfields lives in the house next to the man with the fox.
+12. Kools are smoked in the house next to the house where the horse is kept.
+13. The Lucky Strike smoker drinks orange juice.
+14. The Japanese smokes Parliaments.
+15. The Norwegian lives next to the blue house.
+
+Now, who drinks water? Who owns the zebra?
+
+In the interest of clarity, it must be added that each of the five houses is painted a different color, and their inhabitants are of different national extractions, own different pets, drink different beverages and smoke different brands of American cigarettes. One other thing: in statement 6, right means your right.
+</code></pre>
+</div>
+
+<p>To solve this problem, I remembered a Python library that I had seen a while ago. It was called <a href="https://labix.org/python-constraint">python-constraint</a> and it’s perfect for this type of problem. Basically, you generate a large library of possibilities and add constraints so that it reduces the size of the library.</p>
+
+<p>After following the tutorial, it was fairly easy to write the code to solve the Zebra Puzzle:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># Houses</span>
+<span class="c"># 1 2 3 4 5</span>
+
+<span class="kn">from</span> <span class="nn">constraint</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="n">problem</span> <span class="o">=</span> <span class="n">Problem</span><span class="p">()</span>
+
+<span class="n">nationality</span> <span class="o">=</span> <span class="p">[</span><span class="s">"English"</span><span class="p">,</span> <span class="s">"Spanish"</span><span class="p">,</span> <span class="s">"Ukrainian"</span><span class="p">,</span> <span class="s">"Norwegian"</span><span class="p">,</span> <span class="s">"Japanese"</span><span class="p">]</span>
+<span class="n">pet</span> <span class="o">=</span> <span class="p">[</span><span class="s">"dog"</span><span class="p">,</span> <span class="s">"snails"</span><span class="p">,</span> <span class="s">"fox"</span><span class="p">,</span> <span class="s">"horse"</span><span class="p">,</span> <span class="s">"zebra"</span><span class="p">]</span>
+<span class="n">cigarette</span> <span class="o">=</span> <span class="p">[</span><span class="s">"Old Gold"</span><span class="p">,</span> <span class="s">"Kools"</span><span class="p">,</span> 
+<span class="s">"Chesterfields"</span><span class="p">,</span> <span class="s">"Lucky Strike"</span><span class="p">,</span> <span class="s">"Parliaments"</span><span class="p">]</span>
+<span class="n">colour</span> <span class="o">=</span> <span class="p">[</span><span class="s">"red"</span><span class="p">,</span> <span class="s">"green"</span><span class="p">,</span> <span class="s">"yellow"</span><span class="p">,</span> <span class="s">"blue"</span><span class="p">,</span> <span class="s">"ivory"</span><span class="p">]</span>
+<span class="n">beverage</span> <span class="o">=</span> <span class="p">[</span><span class="s">"coffee"</span><span class="p">,</span> <span class="s">"milk"</span><span class="p">,</span> <span class="s">"orange juice"</span><span class="p">,</span> <span class="s">"water"</span><span class="p">,</span> <span class="s">"tea"</span><span class="p">]</span>
+
+<span class="n">criteria</span> <span class="o">=</span> <span class="n">nationality</span> <span class="o">+</span> <span class="n">pet</span> <span class="o">+</span> <span class="n">cigarette</span> <span class="o">+</span> <span class="n">colour</span> <span class="o">+</span> <span class="n">beverage</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addVariables</span><span class="p">(</span><span class="n">criteria</span><span class="p">,[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">AllDifferentConstraint</span><span class="p">(),</span> <span class="n">nationality</span><span class="p">)</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">AllDifferentConstraint</span><span class="p">(),</span> <span class="n">pet</span><span class="p">)</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">AllDifferentConstraint</span><span class="p">(),</span> <span class="n">cigarette</span><span class="p">)</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">AllDifferentConstraint</span><span class="p">(),</span> <span class="n">colour</span><span class="p">)</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">AllDifferentConstraint</span><span class="p">(),</span> <span class="n">beverage</span><span class="p">)</span>
+
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">e</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">e</span> <span class="o">==</span> <span class="n">r</span><span class="p">,</span> <span class="p">[</span><span class="s">"English"</span><span class="p">,</span><span class="s">"red"</span><span class="p">])</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">s</span> <span class="o">==</span> <span class="n">d</span><span class="p">,</span> <span class="p">(</span><span class="s">"Spanish"</span><span class="p">,</span><span class="s">"dog"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">,</span> <span class="n">g</span><span class="p">:</span> <span class="n">c</span> <span class="o">==</span> <span class="n">g</span><span class="p">,</span> <span class="p">(</span><span class="s">"coffee"</span><span class="p">,</span><span class="s">"green"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">u</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">u</span> <span class="o">==</span> <span class="n">t</span><span class="p">,</span> <span class="p">(</span><span class="s">"Ukrainian"</span><span class="p">,</span><span class="s">"tea"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">g</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="n">g</span><span class="o">-</span><span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="s">"green"</span><span class="p">,</span><span class="s">"ivory"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">o</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">o</span> <span class="o">==</span> <span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="s">"Old Gold"</span><span class="p">,</span><span class="s">"snails"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">k</span> <span class="o">==</span> <span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="s">"Kools"</span><span class="p">,</span><span class="s">"yellow"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">InSetConstraint</span><span class="p">([</span><span class="mi">3</span><span class="p">]),</span> <span class="p">[</span><span class="s">"milk"</span><span class="p">])</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="n">InSetConstraint</span><span class="p">([</span><span class="mi">1</span><span class="p">]),</span> <span class="p">[</span><span class="s">"Norwegian"</span><span class="p">])</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">,</span> <span class="n">f</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="o">-</span><span class="n">f</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="s">"Chesterfields"</span><span class="p">,</span><span class="s">"fox"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="n">h</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="s">"Kools"</span><span class="p">,</span><span class="s">"horse"</span><span class="p">))</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span><span class="p">,</span> <span class="n">o</span><span class="p">:</span> <span class="n">l</span> <span class="o">==</span> <span class="n">o</span><span class="p">,</span> <span class="p">[</span><span class="s">"Lucky Strike"</span><span class="p">,</span><span class="s">"orange juice"</span><span class="p">])</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="n">j</span> <span class="o">==</span> <span class="n">p</span><span class="p">,</span> <span class="p">[</span><span class="s">"Japanese"</span><span class="p">,</span><span class="s">"Parliaments"</span><span class="p">])</span>
+<span class="n">problem</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="k">lambda</span> <span class="n">k</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">k</span><span class="o">-</span><span class="n">h</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="s">"Norwegian"</span><span class="p">,</span><span class="s">"blue"</span><span class="p">))</span>
+
+<span class="n">solution</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">getSolutions</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">solution</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">solution</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">==</span> <span class="n">i</span><span class="p">:</span>
+            <span class="k">print</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">x</span></code></pre></figure>
+
+<p>Here was what it produced:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="mi">1</span> <span class="n">yellow</span>
+<span class="mi">1</span> <span class="n">water</span>
+<span class="mi">1</span> <span class="n">Kools</span>
+<span class="mi">1</span> <span class="n">fox</span>
+<span class="mi">1</span> <span class="n">Norwegian</span>
+<span class="mi">2</span> <span class="n">tea</span>
+<span class="mi">2</span> <span class="n">blue</span>
+<span class="mi">2</span> <span class="n">horse</span>
+<span class="mi">2</span> <span class="n">Ukrainian</span>
+<span class="mi">2</span> <span class="n">Chesterfields</span>
+<span class="mi">3</span> <span class="n">Old</span> <span class="n">Gold</span>
+<span class="mi">3</span> <span class="n">English</span>
+<span class="mi">3</span> <span class="n">milk</span>
+<span class="mi">3</span> <span class="n">snails</span>
+<span class="mi">3</span> <span class="n">red</span>
+<span class="mi">4</span> <span class="n">ivory</span>
+<span class="mi">4</span> <span class="n">dog</span>
+<span class="mi">4</span> <span class="n">Lucky</span> <span class="n">Strike</span>
+<span class="mi">4</span> <span class="n">orange</span> <span class="n">juice</span>
+<span class="mi">4</span> <span class="n">Spanish</span>
+<span class="mi">5</span> <span class="n">Parliaments</span>
+<span class="mi">5</span> <span class="n">coffee</span>
+<span class="mi">5</span> <span class="n">zebra</span>
+<span class="mi">5</span> <span class="n">Japanese</span>
+<span class="mi">5</span> <span class="n">green</span></code></pre></figure>
+
+<p>The number represents each house, from left to right. This matches the solution on the wikipedia page, so thus it works.</p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/bees-and-ants-individually-dumb-collectively-smart" title="NEXT: Thoughts: The Fascinating Intelligence of Bees and Ants">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/using-a-deep-belief-neural-network-to-diagnose-breast-cancer" title="PREV: Project: Using a Deep-Belief Neural Network to Diagnose Breast Cancer">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

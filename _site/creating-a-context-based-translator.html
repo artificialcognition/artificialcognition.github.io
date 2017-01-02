@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Creating a Context-based Translator Using Data Mining</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Creating a Context-based Translator Using Data Mining" />
+<meta name="twitter:description" content="In line with parsing languages, I decided for my next project to be to translate stuff. I’ve been learning French and I’ve noticed that Google Translate really isn’t that good at translating. When ...">
+
+<meta name="description" content="In line with parsing languages, I decided for my next project to be to translate stuff. I’ve been learning French and I’ve noticed that Google Translate real...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/creating-a-context-based-translator">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Creating a Context-based Translator Using Data Mining</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>In line with parsing languages, I decided for my next project to be to translate stuff. I’ve been learning French and I’ve noticed that Google Translate <em>really</em> isn’t that good at translating. When I do have to translate a sentence, I use Reverso. It allows me to search my sentence and comes up with pre-translated sentences (from other sources) that best match it. It often only matches a quarter or half of a sentence or even less, so it’s not very automatic and requires fine-tuning by me, with other searches.</p>
+
+<p>I thought that I would solve this problem. The first thing I looked at on Reverso was whether or not there was an APA that I could use. Unfortunately, there was not. I vaguely remembered a Python library called BeautifulSoup to parse the HTML. This was my first time doing so and I found it interesting that I was parsing HTML to get the results from a natural language search thing to translate a text.</p>
+
+<p>I had trouble with the library at first, but eventually I (with my google-foo) managed to work out how to get the first result from a search.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+<span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="s">'http://context.reverso.net/translation/english-french/i+like+the+green+side+of+the+leaf'</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span>
+<span class="k">print</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span></code></pre></figure>
+
+<p>Now that I had that, I just needed to get an input sentence and work this magic on it. I thought that I would iterate searching the sentence and then the sentence minus a word and so on, until a search term completely matches a pre-done translated text. This will ensure that the translation is as accurate as possible.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s">"Mary was born in Leiden in the Netherlands"</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">' '</span><span class="p">)</span>
+<span class="n">translated</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="c"># searches to see if there is a whole match</span>
+<span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-french/'</span> <span class="o">+</span> <span class="n">search</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+<span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+    <span class="n">translated</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">print</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+
+<span class="n">twords</span> <span class="o">=</span> <span class="s">""</span>
+<span class="n">originallength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="c"># checks until it finds a match</span>
+<span class="k">while</span> <span class="n">translated</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">translated</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-french/'</span> <span class="o">+</span> <span class="n">search</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="s">" "</span> <span class="c"># add a space to the end for further words</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">break</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)):</span>
+        <span class="n">newtext</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">newtext</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-french/'</span> <span class="o">+</span> <span class="n">search</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">newtext</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="s">" "</span> <span class="c"># add a space to the end for further words</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="o">-</span><span class="n">i</span><span class="p">:]</span>
+            
+            <span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-french/'</span> <span class="o">+</span> <span class="n">search</span>
+            <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        
+            <span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">twords</span> <span class="o">+=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+                <span class="n">twords</span> <span class="o">+=</span> <span class="s">" "</span> <span class="c"># add a space to the end for further words</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">print</span> <span class="n">twords</span>
+            <span class="k">break</span></code></pre></figure>
+
+<p>It took a while, but here is the test output for “the dog plays with the ball”:</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>le chien 
+le chien se joue de la balle 
+</code></pre>
+</div>
+
+<p>Surprisingly, the conjugations come out fine most of the time, which I thought was pretty weird. The translator is pretty good, but sometimes the translated text requires a bit of cleaning up. One problem is when the original text is part of an idiom, which messes up the translated text. After cleaning up the code, adding comments and an interface (so you can choose what language you want to translate into), here is the final code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">'Translate:</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+<span class="n">language</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">'Into Arabic, German, Spanish, French, Italian, Dutch, Portuguese?</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+<span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">' '</span><span class="p">)</span>    <span class="c"># puts the words in a list</span>
+<span class="n">translated</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="c"># searches to see if there is a whole match</span>
+<span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-'</span><span class="o">+</span><span class="n">language</span><span class="o">+</span><span class="s">'/'</span> <span class="o">+</span> <span class="n">search</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+<span class="c"># if the search matches the english completely, it is printed and the program terminates</span>
+<span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+    <span class="n">translated</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="k">print</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+
+<span class="n">twords</span> <span class="o">=</span> <span class="s">""</span>
+<span class="n">originallength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="c"># checks until it finds a match</span>
+<span class="k">while</span> <span class="n">translated</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>         <span class="c"># if all of the text is translated, program ends</span>
+        <span class="n">translated</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>         <span class="c"># if there is one word left to be translated</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-'</span><span class="o">+</span><span class="n">language</span><span class="o">+</span><span class="s">'/'</span> <span class="o">+</span> <span class="n">search</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="s">" "</span> <span class="c"># add a space to the end for further words</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">break</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)):</span>
+        <span class="n">newtext</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span><span class="o">-</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">newtext</span><span class="p">)</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-'</span><span class="o">+</span><span class="n">language</span><span class="o">+</span><span class="s">'/'</span> <span class="o">+</span> <span class="n">search</span>
+        <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+        
+        <span class="c"># finds if there is a match for the segment</span>
+        <span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">newtext</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">twords</span> <span class="o">+=</span> <span class="s">" "</span> <span class="c"># add a space to the end for further words</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="o">-</span><span class="n">i</span><span class="p">:]</span>  <span class="c"># removes the already-translated text</span>
+            
+            <span class="n">search</span> <span class="o">=</span> <span class="s">"+"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="s">'http://context.reverso.net/translation/english-'</span><span class="o">+</span><span class="n">language</span><span class="o">+</span><span class="s">'/'</span> <span class="o">+</span> <span class="n">search</span>
+            <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+            
+            <span class="c"># checks the whole new segment to see if there's a match</span>
+            <span class="k">if</span> <span class="s">' '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"src"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+                <span class="n">twords</span> <span class="o">+=</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">"div"</span><span class="p">,</span> <span class="p">{</span> <span class="s">"class"</span> <span class="p">:</span> <span class="s">"trg"</span> <span class="p">})[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">em</span><span class="o">.</span><span class="n">text</span>
+                <span class="n">twords</span> <span class="o">+=</span> <span class="s">" "</span> <span class="c"># add a space to the end for further words</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">print</span> <span class="n">twords</span> <span class="c"># prints the progress</span>
+            <span class="k">break</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/creating-a-chatbot" title="NEXT: Project: Training a Basic Chatbot Part 1">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/testing-stylometry" title="PREV: Project: Stylometry (Results) Part 2">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

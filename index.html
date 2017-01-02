@@ -1,0 +1,21 @@
+---
+layout: default
+---
+
+<section>
+
+	{% for post in site.posts %}
+		{% unless post.next %}
+		{% endunless %}
+
+		<ul>
+			<li>
+				<div class="title">
+					<a href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a>
+				</div>
+			</li>
+		</ul>
+
+	{% endfor %}
+
+</section>

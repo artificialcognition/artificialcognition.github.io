@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>What I Have Done So Far</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="What I Have Done So Far" />
+<meta name="twitter:description" content="Genetic Algorithms:">
+
+<meta name="description" content="Genetic Algorithms:">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/so-far">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>What I Have Done So Far</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p><strong>Genetic Algorithms:</strong></p>
+
+<p>I found out about genetic algorithms a few months ago, and then found <a href="http://natureofcode.com/book/chapter-9-the-evolution-of-code/">this site</a>. Well, it’s more of an online book to be precise. Anyways, in that chapter, I read the first part and wrote it in Python. Like I wrote previously, the explanations and the concepts were simple and it was easy to convert the code.</p>
+
+<p>What I coded was you could enter a string (for example a sentence), and then it would create a population of objects. These objects had “genes” which was the string of letters. Keep in mind that at the beginning, the characters in these genes were randomly chosen. Then the fitness of each object would be calculated, that is the objects that were closer to the actual string had a higher fitness. Then the best strings “merged” and formed the next generation. In this way, theoretically, it would eventually reach the goal. <strong>And it did</strong>. In the beginning, I could understand the concept and see why, but I think I secretly had doubts about whether A, it could actually work and B if I could actually code it. But work it did, and I was seriously amazed. It still doesn’t cease to amaze me that random characters become a legible string through a simple algorithm.</p>
+
+<p>Anyways, I chose to print the best string (highest fitness) of each generation and without further ado, here is the code (I made a few minor changes too):</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="s">""</span>
+<span class="n">alphabet</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="s">' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890$&amp;[{}(=*)+]!#@/?'</span><span class="p">)</span>
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="k">class</span> <span class="nc">DNA</span><span class="p">:</span>
+    <span class="s">"""objects that store genetic information"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">genes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alphabet</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">target</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">score</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">DNA</span><span class="p">()</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">midpoint</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">alphabet</span><span class="p">)</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>               <span class="c"># Creates the population filled with DNA</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DNA</span><span class="p">())</span> 
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">i</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>  <span class="c"># Calculate the fitness for every member of population</span>
+
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># Using probability</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span>
+
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">maxfit</span><span class="p">(</span><span class="n">thing</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">thing</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="s">""</span>
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="k">while</span> <span class="n">result</span> <span class="o">!=</span> <span class="n">target</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+    <span class="k">print</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">),</span> <span class="s">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">genes</span><span class="p">)</span>
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="s">''</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">genes</span><span class="p">)</span></code></pre></figure>
+
+<p><strong>Neural Networks:</strong></p>
+
+<p>This subject was far harder to begin with than genetic algorithms. I’m going with a top-bottom approach, as the technical aspects are still a bit difficult to grasp, but the results are really quite cool. I acquired and went through a little of <a href="http://www.amazon.com/Fundamentals-Neural-Networks-Architectures-Applications/dp/0133341860">Fundamentals of Neural Networks: Architectures, Algorithms And Applications</a>, which was a bit hard to read but I managed. That was my first taste of neural networks and it was interesting, but I thought I was going a bit slow so I then went through a little of this course. I’m still going through them, but at this point I wanted to do some practical stuff, so I downloaded <a href="http://pybrain.org">Pybrain</a> which is a NN library that could let me abstractly deal with the concepts. And using Pybrain I made a Handwritten Digit recognition program of a sort (it doesn’t work very well and I don’t think it really does anything but compare pixels that are “on” and “off”). Everything’s still a bit confusing and I don’t get why some modifications make it work better, but here it is:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pybrain.datasets</span> <span class="kn">import</span> <span class="n">ClassificationDataSet</span>
+<span class="kn">from</span> <span class="nn">pybrain.tools.shortcuts</span> <span class="kn">import</span> <span class="n">buildNetwork</span>
+<span class="kn">from</span> <span class="nn">pybrain.supervised.trainers</span> <span class="kn">import</span> <span class="n">BackpropTrainer</span>
+<span class="kn">from</span> <span class="nn">pybrain.structure.modules</span> <span class="kn">import</span> <span class="n">SoftmaxLayer</span>
+<span class="kn">from</span> <span class="nn">pybrain.structure.modules</span> <span class="kn">import</span> <span class="n">SigmoidLayer</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+
+<span class="n">ds</span> <span class="o">=</span> <span class="n">ClassificationDataSet</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">'./data.txt'</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1593</span><span class="p">):</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+    <span class="n">setInput</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">raw</span><span class="p">[:</span><span class="mi">1791</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">' '</span><span class="p">))</span>
+    <span class="n">setOutput</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">raw</span><span class="p">[</span><span class="o">-</span><span class="mi">22</span><span class="p">:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">' '</span><span class="p">))</span>
+    <span class="n">ds</span><span class="o">.</span><span class="n">addSample</span><span class="p">(</span><span class="n">setInput</span><span class="p">,</span> <span class="n">setOutput</span><span class="p">)</span>    
+
+<span class="n">trainDs</span><span class="p">,</span> <span class="n">testDs</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">splitWithProportion</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="n">net</span> <span class="o">=</span> <span class="n">buildNetwork</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">hiddenclass</span><span class="o">=</span><span class="n">SigmoidLayer</span><span class="p">,</span> <span class="n">outclass</span><span class="o">=</span><span class="n">SoftmaxLayer</span><span class="p">)</span>
+
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">BackpropTrainer</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">trainDs</span><span class="p">,</span> <span class="n">learningrate</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">weightdecay</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
+
+<span class="n">trainer</span><span class="o">.</span><span class="n">trainUntilConvergence</span><span class="p">(</span><span class="n">maxEpochs</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+
+<span class="n">errors</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">750</span><span class="p">):</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">testDs</span><span class="p">[</span><span class="s">'input'</span><span class="p">][</span><span class="n">x</span><span class="p">]))</span>
+    <span class="n">targs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">testDs</span><span class="p">[</span><span class="s">'target'</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="n">targs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">outputs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">outputs</span><span class="p">))</span> <span class="o">!=</span> <span class="n">target</span><span class="p">:</span>
+        <span class="n">errors</span> <span class="o">+=</span> <span class="mi">1</span>
+
+<span class="k">print</span> <span class="s">"Errors: </span><span class="si">%</span><span class="s">d percent"</span> <span class="o">%</span> <span class="p">(</span><span class="n">errors</span><span class="o">/</span><span class="mf">750.</span> <span class="o">*</span> <span class="mf">100.</span><span class="p">)</span>
+
+<span class="n">imageName</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">"Enter image name:"</span><span class="p">)</span>
+<span class="n">drawing</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="nb">open</span><span class="p">(</span><span class="n">imageName</span><span class="p">)</span>
+<span class="n">sized</span> <span class="o">=</span> <span class="n">drawing</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="mi">16</span><span class="p">,</span><span class="mi">16</span><span class="p">))</span>
+<span class="n">gray</span> <span class="o">=</span> <span class="n">sized</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s">'L'</span><span class="p">)</span>
+<span class="n">bw</span> <span class="o">=</span> <span class="n">gray</span><span class="o">.</span><span class="n">point</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">x</span><span class="o">&lt;</span><span class="mi">128</span> <span class="k">else</span> <span class="mi">255</span><span class="p">,</span> <span class="s">'1'</span><span class="p">)</span>
+
+<span class="n">converted</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">bw</span><span class="o">.</span><span class="n">getpixel</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span> <span class="o">==</span> <span class="mi">255</span><span class="p">:</span>
+            <span class="n">converted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0000</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">bw</span><span class="o">.</span><span class="n">getpixel</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">converted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0000</span><span class="p">)</span>
+
+<span class="n">outputs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">converted</span><span class="p">))</span>
+<span class="n">sortedO</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+<span class="n">sortedO</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+
+<span class="n">firstChoice</span> <span class="o">=</span> <span class="n">sortedO</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">secondChoice</span> <span class="o">=</span> <span class="n">sortedO</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">thirdChoice</span> <span class="o">=</span> <span class="n">sortedO</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+<span class="n">firstChoice</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">firstChoice</span><span class="p">)</span>
+<span class="n">secondChoice</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">secondChoice</span><span class="p">)</span>
+<span class="n">thirdChoice</span> <span class="o">=</span> <span class="n">outputs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">thirdChoice</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="s">"1. </span><span class="si">%</span><span class="s">d</span><span class="se">\n</span><span class="s">2. </span><span class="si">%</span><span class="s">d</span><span class="se">\n</span><span class="s">3. </span><span class="si">%</span><span class="s">d"</span> <span class="o">%</span> <span class="p">(</span><span class="n">firstChoice</span><span class="p">,</span> <span class="n">secondChoice</span><span class="p">,</span> <span class="n">thirdChoice</span><span class="p">)</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/tic-tac-toe" title="NEXT: Project: Making an AI that Plays Tic Tac Toe">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/hello-world-2" title="PREV: Hello World">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

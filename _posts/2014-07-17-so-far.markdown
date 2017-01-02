@@ -1,0 +1,170 @@
+---
+author: nhuhu
+comments: true
+date: 2014-07-17 18:12:50+00:00
+layout: post
+link: https://artificialcognition.wordpress.com/2014/07/18/so-far/
+slug: so-far
+title: What I Have Done So Far
+wordpress_id: 11
+categories:
+- Experiments
+---
+
+**Genetic Algorithms:**
+
+I found out about genetic algorithms a few months ago, and then found [this site](http://natureofcode.com/book/chapter-9-the-evolution-of-code/). Well, it's more of an online book to be precise. Anyways, in that chapter, I read the first part and wrote it in Python. Like I wrote previously, the explanations and the concepts were simple and it was easy to convert the code.
+
+What I coded was you could enter a string (for example a sentence), and then it would create a population of objects. These objects had "genes" which was the string of letters. Keep in mind that at the beginning, the characters in these genes were randomly chosen. Then the fitness of each object would be calculated, that is the objects that were closer to the actual string had a higher fitness. Then the best strings "merged" and formed the next generation. In this way, theoretically, it would eventually reach the goal. **And it did**. In the beginning, I could understand the concept and see why, but I think I secretly had doubts about whether A, it could actually work and B if I could actually code it. But work it did, and I was seriously amazed. It still doesn't cease to amaze me that random characters become a legible string through a simple algorithm.
+
+Anyways, I chose to print the best string (highest fitness) of each generation and without further ado, here is the code (I made a few minor changes too):
+
+{% highlight python %}
+import random
+
+target = ""
+alphabet = list(' ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890$&[{}(=*)+]!#@/?')
+mutation_rate = 0.01
+population_no = 1000
+
+class DNA:
+    """objects that store genetic information"""
+
+    def __init__(self):
+        self.genes = []
+        for _ in range(len(target)):
+            self.genes.append(random.choice(alphabet))
+
+    def calcfitness(self):
+        score = 0
+        for i in range(len(target)):
+            if self.genes[i] == target[i]:
+                score += 1
+        self.fitness = float(score)/len(target)
+
+    def crossover(self, partner):
+        child = DNA()
+        midpoint = random.randint(0,len(self.genes))
+        for i in range(len(self.genes)):
+            if i >= midpoint:
+                child.genes[i] = self.genes[i]
+            else:
+                child.genes[i] = partner.genes[i]
+        return child
+
+    def mutate(self):
+        for i in range(len(self.genes)):
+            if random.random() < mutation_rate:
+                self.genes[i] = random.choice(alphabet)
+
+population = []               # Creates the population filled with DNA
+for _ in range(population_no):
+    population.append(DNA()) 
+
+def main():
+    for i in population:
+        i.calcfitness()  # Calculate the fitness for every member of population
+
+    mating_pool = [] # Using probability
+    for i in population:
+        n = int(i.fitness * 100)
+        for x in range(n):
+            mating_pool.append(i)
+
+    for i in range(len(population)):
+        a = random.randint(0,len(mating_pool)-1)
+        b = random.randint(0,len(mating_pool)-1)
+
+        parent_a = mating_pool[a]
+        parent_b = mating_pool[b]
+
+        child = parent_a.crossover(parent_b)
+
+        child.mutate()
+        population[i] = child
+        population[i].calcfitness()
+
+def maxfit(thing):
+    return thing.fitness
+
+result = ""
+gen = 1
+
+while result != target:
+    main()
+    print str(gen), ''.join(max(population,key=maxfit).genes)
+    gen += 1
+    result = ''.join(max(population,key=maxfit).genes)
+{% endhighlight %}
+
+
+**Neural Networks:**
+
+This subject was far harder to begin with than genetic algorithms. I'm going with a top-bottom approach, as the technical aspects are still a bit difficult to grasp, but the results are really quite cool. I acquired and went through a little of [Fundamentals of Neural Networks: Architectures, Algorithms And Applications](http://www.amazon.com/Fundamentals-Neural-Networks-Architectures-Applications/dp/0133341860), which was a bit hard to read but I managed. That was my first taste of neural networks and it was interesting, but I thought I was going a bit slow so I then went through a little of this course. I'm still going through them, but at this point I wanted to do some practical stuff, so I downloaded [Pybrain](http://pybrain.org) which is a NN library that could let me abstractly deal with the concepts. And using Pybrain I made a Handwritten Digit recognition program of a sort (it doesn't work very well and I don't think it really does anything but compare pixels that are "on" and "off"). Everything's still a bit confusing and I don't get why some modifications make it work better, but here it is:
+
+{% highlight python %}
+from pybrain.datasets import ClassificationDataSet
+from pybrain.tools.shortcuts import buildNetwork
+from pybrain.supervised.trainers import BackpropTrainer
+from pybrain.structure.modules import SoftmaxLayer
+from pybrain.structure.modules import SigmoidLayer
+from PIL import Image
+
+ds = ClassificationDataSet(256, 10)
+
+data = open('./data.txt')
+for _ in xrange(1593):
+    raw = data.readline()
+    setInput = map(float, raw[:1791].split(' '))
+    setOutput = map(int, raw[-22:-3].split(' '))
+    ds.addSample(setInput, setOutput)    
+
+trainDs, testDs = ds.splitWithProportion(0.5)
+
+net = buildNetwork(256, 300, 300, 300, 300, 10, hiddenclass=SigmoidLayer, outclass=SoftmaxLayer)
+
+trainer = BackpropTrainer(net, trainDs, learningrate=0.02, momentum=0.4, verbose=True, weightdecay=0.01)
+
+trainer.trainUntilConvergence(maxEpochs=7)
+
+errors = 0
+
+for x in xrange(750):
+    outputs = list(net.activate(testDs['input'][x]))
+    targs = list(testDs['target'][x])
+    target = targs.index(1)
+    if outputs.index(max(outputs)) != target:
+        errors += 1
+
+print "Errors: %d percent" % (errors/750. * 100.)
+
+imageName = raw_input("Enter image name:")
+drawing = Image.open(imageName)
+sized = drawing.resize((16,16))
+gray = sized.convert('L')
+bw = gray.point(lambda x: 0 if x<128 else 255, '1')
+
+converted = []
+
+for y in xrange(16):
+    for x in xrange(16):
+        if bw.getpixel((x,y)) == 255:
+            converted.append(0.0000)
+        elif bw.getpixel((x,y)) == 0:
+            converted.append(1.0000)
+
+outputs = list(net.activate(converted))
+sortedO = sorted(outputs)
+sortedO.reverse()
+
+firstChoice = sortedO[0]
+secondChoice = sortedO[1]
+thirdChoice = sortedO[2]
+
+firstChoice = outputs.index(firstChoice)
+secondChoice = outputs.index(secondChoice)
+thirdChoice = outputs.index(thirdChoice)
+
+print "1. %d\n2. %d\n3. %d" % (firstChoice, secondChoice, thirdChoice)
+{% endhighlight %}
+

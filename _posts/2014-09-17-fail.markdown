@@ -1,0 +1,36 @@
+---
+author: nhuhu
+comments: true
+date: 2014-09-17 07:33:07+00:00
+layout: post
+link: https://artificialcognition.wordpress.com/2014/09/17/fail/
+slug: fail
+title: 'Thoughts: Failure...'
+wordpress_id: 30
+categories:
+- Experiments
+---
+
+I just finished my exams so that's why I haven't been doing much lately. Today, I realised that my tic tac toe neural network powered genetic algorithm thing isn't going to work the way it is at currently, but I did learn a few things.
+
+
+
+	
+  1. I picked up the code that I had written a few weeks ago and I realise that it's a pretty convoluted way of making tic tac toe and even more so if I wanted to create a neural network. First of all the input are not numbers, I made them letters ("x" and "y") and blanks spaces. This would have made it hard to put as input for the neural network. If I were to change this, all my formatting for printing the game would have to change, and to be honest, I've forgotten half of how I coded that part, so that would have been a pain to do.
+
+	
+  2. I did learn about this function that returns the index of the max of a list (so you could say that it wasn't all for nothing). Also http://stats.stackexchange.com/questions/181/how-to-choose-the-number-of-hidden-layers-and-nodes-in-a-feedforward-neural-netw was quite informative.
+
+	
+  3. I haven't given up on this, I just to be honest, cannot be bothered rewriting the whole thing right now. I'll do it maybe, when I'm bored and have forgotten my current frustration.
+
+	
+  4. If and when I do redo everything, here is what I need to make sure to do (ie, a note to self):
+- create an easy way to reference the position of each square (ideally use one list instead of 3 in one for the squares)
+- don't use strings as the pieces, use numbers and rewrite the print function to replace them with letters.
+- actually write out what I plan to do, so that I don't make mistakes like this again (ie, not planning for what I plan to do.
+
+	
+  5. Over the exam week(s), I happened across [Game Theory](http://en.wikipedia.org/wiki/Game_theory) and [/r/GAMETHEORY](http://www.reddit.com/r/GAMETHEORY). And so I took a look into it. It's pretty interesting stuff, and I'm thinking about "restructuring" this blog to make it more general. Sort of like a general blog where I can post my thoughts/projects relating to ideas that are interesting to me.
+
+

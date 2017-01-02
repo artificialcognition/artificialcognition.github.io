@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Training a Basic Chatbot Part 1</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Training a Basic Chatbot Part 1" />
+<meta name="twitter:description" content="I started researching chatbots and how they worked. It was actually slightly disappointing because as far as it’s concerned, chatbots basically use statistics and algorithms to determine what to re...">
+
+<meta name="description" content="I started researching chatbots and how they worked. It was actually slightly disappointing because as far as it’s concerned, chatbots basically use statistic...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/creating-a-chatbot">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Training a Basic Chatbot Part 1</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>I started researching chatbots and how they worked. It was actually slightly disappointing because as far as it’s concerned, chatbots basically use statistics and algorithms to determine what to respond (at least the basic ones).</p>
+
+<p>Anyway, I still decided to play around with <a href="https://github.com/gunthercox/ChatterBot">this module</a>. It’s pretty cool because you can train it as you speak to it. However… when I tried that feature, it was very VERY bad. It repeated itself and myself and it made no sense at all. So I decided to give it a little bit of pre-training.</p>
+
+<p>Now, I began looking for corpora of English dialogue and eventually found <a href="https://www.agendaweb.org/listening/practical-english-conversations.html'">this</a>, after a few unusable databases. It’s an ESOL site and it was just PERFECT. It gave the dialogue in an easy A: B: format and I figured I could use BeautifulSoup to parse it pretty easily.</p>
+
+<p>That was when I ran into a problem, because I simply couldn’t parse it. Instead, I had to use Regular Expressions, which I learnt way way back and had to look it up again. After a nice stroll down memory lane, I came up with these expressions:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c"># A regular expression that targets "A: (blah blah) \n" OR "B: (blah blah) \n"</span>
+<span class="n">filt</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">'[A|B]: (.*?)</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+<span class="c"># A regular expression that targets the reversed URL to get the base URL</span>
+<span class="n">linkfilt</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">'.*?(</span><span class="err">\</span><span class="s">/.*)'</span><span class="p">)</span></code></pre></figure>
+
+<p>The rest of the code was pretty easy actually; it just took a bit of time. The amount of dialogue is absolutely massive and I gave it a go at processing all of it today (i got up to about line 6000 of dialogue), but it took too long and I gave up. I’ll do it tomorrow, but here’s the functioning code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">chatterbot</span> <span class="kn">import</span> <span class="n">ChatBot</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="c"># A regular expression that targets "A: (blah blah) \n" OR "B: (blah blah) \n"</span>
+<span class="n">filt</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">'[A|B]: (.*?)</span><span class="se">\n</span><span class="s">'</span><span class="p">)</span>
+<span class="c"># A regular expression that targets the reversed URL to get the base URL</span>
+<span class="n">linkfilt</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="s">'.*?(</span><span class="err">\</span><span class="s">/.*)'</span><span class="p">)</span>
+<span class="n">links</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c"># looks at the main page and gets a list of links to more links</span>
+<span class="n">main</span> <span class="o">=</span> <span class="s">'https://www.agendaweb.org/listening/practical-english-conversations.html'</span>
+<span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+<span class="n">main</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">'a'</span><span class="p">)[</span><span class="mi">9</span><span class="p">:</span><span class="o">-</span><span class="mi">20</span><span class="p">]:</span>
+    <span class="n">main</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s">'href'</span><span class="p">])</span>
+
+<span class="c"># uses those links to find the actual links to the dialogue</span>
+<span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">main</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">m</span>
+    <span class="n">link</span> <span class="o">=</span> <span class="n">m</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">link</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="c"># adds those links onto a list called links</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">soup</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s">'a'</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">links</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">m</span><span class="p">,</span> <span class="n">l</span><span class="p">[</span><span class="s">'href'</span><span class="p">]))</span>
+
+<span class="c"># a function that extracts the conversation into a list</span>
+<span class="k">def</span> <span class="nf">getconvo</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">filt</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="c"># sets up the chatbot Noob</span>
+<span class="n">chatbot</span> <span class="o">=</span> <span class="n">ChatBot</span><span class="p">(</span><span class="s">"Noob"</span><span class="p">,</span> <span class="n">logging</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+    <span class="c"># reverses it so that the Regular Expression can be used</span>
+    <span class="n">reversedbase</span> <span class="o">=</span> <span class="n">linkfilt</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">l</span><span class="p">[</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c"># reverses it again</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">reversedbase</span><span class="p">[</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">getconvo</span><span class="p">(</span><span class="n">base</span> <span class="o">+</span> <span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">counter</span><span class="p">,</span> <span class="n">x</span>
+        <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">chatbot</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">chatbot</span><span class="o">.</span><span class="n">get_response</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">())</span>
+
+    <span class="k">print</span> <span class="n">response</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/chatbot-part-deux" title="NEXT: Project: Training a Basic Chatbot Part 2">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/creating-a-context-based-translator" title="PREV: Project: Creating a Context-based Translator Using Data Mining">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

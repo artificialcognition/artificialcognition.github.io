@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Creating Visual Art with Genetic Algorithms Part 2</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Creating Visual Art with Genetic Algorithms Part 2" />
+<meta name="twitter:description" content="Okay, there’ve been some changes. First of all, the algorithm has been slightly altered so that changes in the number of mutations per generation is changeable. Secondly, the triangles have been ch...">
+
+<meta name="description" content="Okay, there’ve been some changes. First of all, the algorithm has been slightly altered so that changes in the number of mutations per generation is changeab...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/geometric-genetic-art-part-2">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Creating Visual Art with Genetic Algorithms Part 2</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>Okay, there’ve been some changes. First of all, the algorithm has been slightly altered so that changes in the number of mutations per generation is changeable. Secondly, the triangles have been changed into pentagons. This is because triangles do not possess the appropriate number of vertices for a good image to form. Thirdly, I actually changed the target image from a bird to a sunset, because the bird was too complex to draw with only 50 pentagons and limited processing power.</p>
+
+<p>I only realised that after heaps of experimentation. Oh what I’d give for Google’s supercomputers. My laptop takes ages to process the algorithm and I’ve had to leave it running overnight for many nights now. The first few tries, which even though they took so much time, ended in failure. I later realised that my fitness algorithm was not running correctly. So that took a few days. Then, after those failures, I began to see success! :D</p>
+
+<p>I actually wrote a “recreate” program so that the triangles are saved every 1000 generations, and can then be retrieved so that they can be scaled up at a higher resolution. This speeds up the process because I can process it on a lower resolution and make it bigger at the end.</p>
+
+<p>Anyway, here’s <strong>final</strong> final code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">pygame</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"sun.jpg"</span><span class="p">)</span>
+<span class="n">totalx</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">totaly</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span><span class="n">totaly</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Art'</span><span class="p">)</span>
+
+<span class="n">pentno</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">pop_no</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">BLACK</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">diff</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">c</span>
+
+<span class="k">class</span> <span class="nc">Pentagon</span><span class="p">:</span>
+    <span class="s">"""pentagons that make up each Drawing"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">))]</span>        
+
+<span class="k">class</span> <span class="nc">Drawing</span><span class="p">:</span>
+    <span class="s">"""pieces of art"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">Pentagon</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c"># calculates fitness via how different each pixel's color is</span>
+        <span class="n">totaldiff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">totaldiff</span> <span class="o">+=</span> <span class="n">diff</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">getpixel</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)),</span>
+                <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">get_at</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))[:</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">totaldiff</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">])</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">pick_index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pentno</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="n">change</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">change</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">colors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+                    <span class="n">colors</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">change</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">p1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">p2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">p3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">p4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">p5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+                <span class="n">changex</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">totalx</span><span class="p">)</span>
+                <span class="n">changey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">totaly</span><span class="p">)</span>
+                <span class="n">change</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">p4</span><span class="p">,</span> <span class="n">p5</span><span class="p">]</span>
+                <span class="n">change</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">changex</span><span class="p">,</span> <span class="n">changey</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">change</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pop_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Drawing</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">minfit</span><span class="p">(</span><span class="n">drawing</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">drawing</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">record</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+
+    <span class="k">print</span> <span class="s">"Generation: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="c"># calculating fitness...</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>    
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">pentagons</span><span class="p">:</span>
+            <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">d</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+        <span class="k">print</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="o">+</span> <span class="s">": "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c"># choosing best...</span>
+
+    <span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">minfit</span><span class="p">)</span>
+    <span class="n">record</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+
+    <span class="c"># drawing...    </span>
+
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>  
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">best</span><span class="o">.</span><span class="n">pentagons</span><span class="p">:</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="c"># creating mating pool... </span>
+
+    <span class="n">st</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">pentagons</span>
+
+    <span class="n">c1</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c1</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c2</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c2</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c3</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c3</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c4</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c4</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c3</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c4</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gen</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span> <span class="o">+</span> <span class="s">".jpeg"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gen</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">pentagons</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span> <span class="s">"save.p"</span><span class="p">,</span> <span class="s">"wb"</span><span class="p">))</span>
+
+    <span class="k">print</span> <span class="n">record</span>
+
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span></code></pre></figure>
+
+<p>And, here’s rewrite.py:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">pygame</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="n">target</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="nb">open</span><span class="p">(</span><span class="s">"sun.jpg"</span><span class="p">)</span>
+<span class="n">totalx</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">totaly</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span><span class="n">totaly</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Art'</span><span class="p">)</span>
+
+<span class="n">pentno</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">pop_no</span> <span class="o">=</span> <span class="mi">5</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">BLACK</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">diff</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">second</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">-</span><span class="n">second</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">c</span>
+
+<span class="k">class</span> <span class="nc">Pentagon</span><span class="p">:</span>
+    <span class="s">"""pentagons that make up each Drawing"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">),</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">255</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totalx</span><span class="p">),</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">totaly</span><span class="p">))]</span>        
+
+<span class="k">class</span> <span class="nc">Drawing</span><span class="p">:</span>
+    <span class="s">"""pieces of art"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">Pentagon</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c"># calculates fitness via how different each pixel's color is</span>
+        <span class="n">totaldiff</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">totaldiff</span> <span class="o">+=</span> <span class="n">diff</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">getpixel</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)),</span>
+                <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">get_at</span><span class="p">((</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))[:</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">totaldiff</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">])</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">child</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">pick_index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pentno</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="n">change</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">change</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">colors</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+                    <span class="n">colors</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">change</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">p1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">p2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">p3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">p4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">p5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+                <span class="n">changex</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">totalx</span><span class="p">)</span>
+                <span class="n">changey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">totaly</span><span class="p">)</span>
+                <span class="n">change</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">p3</span><span class="p">,</span> <span class="n">p4</span><span class="p">,</span> <span class="n">p5</span><span class="p">]</span>
+                <span class="n">change</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">changex</span><span class="p">,</span> <span class="n">changey</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">pick_index</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">change</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pop_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Drawing</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">minfit</span><span class="p">(</span><span class="n">drawing</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">drawing</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">record</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+
+    <span class="k">print</span> <span class="s">"Generation: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="c"># calculating fitness...</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>    
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">pentagons</span><span class="p">:</span>
+            <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+            <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+            <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">d</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+        <span class="k">print</span> <span class="nb">str</span><span class="p">(</span><span class="n">count</span><span class="p">)</span> <span class="o">+</span> <span class="s">": "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c"># choosing best...</span>
+
+    <span class="n">best</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">minfit</span><span class="p">)</span>
+    <span class="n">record</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+
+    <span class="c"># drawing...    </span>
+
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>  
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">best</span><span class="o">.</span><span class="n">pentagons</span><span class="p">:</span>
+        <span class="n">surface</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="n">totalx</span><span class="p">,</span> <span class="n">totaly</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">surface</span><span class="o">.</span><span class="n">set_alpha</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="c"># creating mating pool... </span>
+
+    <span class="n">st</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">pentagons</span>
+
+    <span class="n">c1</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c1</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c1</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c2</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c2</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c3</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c3</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c3</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">c4</span> <span class="o">=</span> <span class="n">Drawing</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">pentno</span><span class="p">):</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">color</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">alpha</span>
+        <span class="n">c4</span><span class="o">.</span><span class="n">pentagons</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">c4</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+
+    <span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c3</span><span class="p">)</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c4</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gen</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span> <span class="o">+</span> <span class="s">".jpeg"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">gen</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">pentagons</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span> <span class="s">"save.p"</span><span class="p">,</span> <span class="s">"wb"</span><span class="p">))</span>
+
+    <span class="k">print</span> <span class="n">record</span>
+
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span></code></pre></figure>
+
+<p>This is the result:
+<img src="https://artificialcognition.files.wordpress.com/2016/01/screen-region-2016-01-25-at-11-12-40.png" alt="Screen Region 2016-01-25 at 11.12.40.png" /></p>
+
+<p>Here it is in action:</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2016/01/animated.gif" alt="animated" /></p>
+
+<p>And.. using recreate.py, here is the final piece of art in a higher resolution, cropped:</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2016/01/croppedsunset.jpeg" alt="croppedsunset.jpeg" /></p>
+
+<p>I think it turned out rather well, all things considered. It actually looks like a sunset. I wonder what would happen if I posted it on deviantart.com… :D</p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/using-a-deep-belief-neural-network-to-diagnose-breast-cancer" title="NEXT: Project: Using a Deep-Belief Neural Network to Diagnose Breast Cancer">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/geometric-genetic-art-part-1" title="PREV: Project: Creating Visual Art with Genetic Algorithms Part 1">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

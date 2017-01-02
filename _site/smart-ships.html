@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Smart Ships Part 1</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Smart Ships Part 1" />
+<meta name="twitter:description" content="Again, inspired by this, I decided to see if I could do it in Python. This time was a little bit harder, because the genotype and the phenotype were distinct from each other. I’ve been learning and...">
+
+<meta name="description" content="Again, inspired by this, I decided to see if I could do it in Python. This time was a little bit harder, because the genotype and the phenotype were distinct...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/smart-ships">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Smart Ships Part 1</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>Again, inspired by <a href="http://natureofcode.com/book/chapter-9-the-evolution-of-code/">this</a>, I decided to see if I could do it in Python. This time was a little bit harder, because the genotype and the phenotype were distinct from each other. I’ve been learning and playing around with Pygame and I thought I could give it a go. So far, this is what I’ve come up with:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pygame</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">numpy</span><span class="o">,</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">60</span> <span class="c"># frames per second setting</span>
+<span class="n">fpsClock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+
+<span class="c"># set up the window</span>
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Ship'</span><span class="p">)</span>
+
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">shipImg</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">'ship.gif'</span><span class="p">)</span>
+
+<span class="n">depot</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">'depot.gif'</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DNA</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">maxforce</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="n">lifetime</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">genes</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])]</span><span class="o">*</span><span class="n">lifetime</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lifetime</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span><span class="o">*</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxforce</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Ship</span><span class="p">:</span>
+    <span class="s">"""A ship"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">400</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dna</span> <span class="o">=</span> <span class="n">DNA</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">applyForce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="o">+=</span> <span class="n">f</span>
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="o">*=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">fitness</span><span class="p">():</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loaction</span><span class="o">-</span><span class="n">target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">d</span><span class="p">)</span><span class="o">^</span><span class="mi">2</span>
+
+<span class="n">ship1</span> <span class="o">=</span> <span class="n">Ship</span><span class="p">()</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span> <span class="c"># the main game loop</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">depot</span><span class="p">,</span> <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="n">ship1</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shipImg</span><span class="p">,</span> <span class="n">ship1</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">fpsClock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">FPS</span><span class="p">)</span></code></pre></figure>
+
+<p>I tried to follow the code on that site to the best of my ability, but it got a bit confusing, so I tried to do it myself. I haven’t really implemented any gAs yet, but I’ve got the ship and the motion down. I’ll try to finish it in the next few days if I can, but it’s been really confusing so far.</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2015/01/window-2015-01-09-at-15-47-51.png?w=290" alt="Window 2015-01-09 at 15.47.51" /></p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/window-2015-01-09-at-15-47-30.png"><img src="https://artificialcognition.files.wordpress.com/2015/01/window-2015-01-09-at-15-47-30.png?w=290" alt="So far, it's moving linearly, in a diagonal direction, which is good. I used images i found off google for the ship and depot." /></a></p>
+
+<p>So far, it’s moving linearly, in a diagonal direction, which is good.</p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/my-ships-come-in" title="NEXT: Project: Smart Ships Part 2">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/how-to-install-pygame-on-osx-yosemite-when-theres-an-error-that-pygame-requires-system-python-2-7-to-install" title="PREV: How to Install Pygame on OSX Yosemite (when there's an error that pygame requires System Python 2.7 to install)">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

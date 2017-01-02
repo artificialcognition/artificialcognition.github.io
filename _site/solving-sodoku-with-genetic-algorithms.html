@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Completing Sodoku with Genetic Algorithms</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Completing Sodoku with Genetic Algorithms" />
+<meta name="twitter:description" content="After using GAs to create art, and evolve creatures, you’d think that Sodoku would be fairly trivial. It’s not. In fact, I found it almost impossibly hard. I spent a week working on this problem, m...">
+
+<meta name="description" content="After using GAs to create art, and evolve creatures, you’d think that Sodoku would be fairly trivial. It’s not. In fact, I found it almost impossibly hard. I...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/solving-sodoku-with-genetic-algorithms">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Completing Sodoku with Genetic Algorithms</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>After using GAs to create art, and evolve creatures, you’d think that Sodoku would be fairly trivial. It’s not. In fact, I found it almost impossibly hard. I spent a week working on this problem, mainly because each iteration takes so long and my processing speed isn’t very high. So I’ve had to leave it overnight for many a night.</p>
+
+<p>I tried heaps of different fitness algorithms, crossover algorithms, and mutation algorithms. In the end, I had to reset the population after it stagnated (only if it has produced the same best fitness for 10 generations), knowing that it had reached its local minima (of which in Sodoku there are many).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">    <span class="c"># if it has reached a local minima, reset</span>
+    <span class="k">if</span> <span class="n">bests</span> <span class="o">==</span> <span class="p">[</span><span class="n">currentbest</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">totalbests</span> <span class="o">+=</span> <span class="n">currentbest</span>
+        <span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+            <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Solution</span><span class="p">())</span>
+        <span class="n">cycle</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span></code></pre></figure>
+
+<p>I also had to reduce the search space by a preliminary elimination of impossible digits by looking at each row/column:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">possibles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+    <span class="n">possibles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">processed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">processed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">fixed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fixed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fixed</span><span class="p">:</span>
+                <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">fixed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">column</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">column</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fixed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fixed</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">except</span> <span class="nb">ValueError</span><span class="p">:</span>
+                    <span class="k">continue</span></code></pre></figure>
+
+<p>I also had to fiddle with the population size and the mutation rate. I decided between a mutation algorithm that randomly switched digits vs one that would swap digits. I also had to choose between a crossover algorithm being either one that would choose between every digit of parents at a 50-50 rate, or to choose a midpoint and split it.</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2016/03/screen-region-2016-02-24-at-22-40-521.png?w=600" alt="Screen Region 2016-02-24 at 22.40.52" /></p>
+
+<p>In the end, I managed to find a solution to the above puzzle, that used a population size of 2000, and mutation rate of 1%, and 623 generations. That’s 1246000 instances of the Sodoku board! It came up with the following solution:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>Cycle: 1 Gen 623: 84 Average Gen/Cycle: 0
+[84, 79, 77, 77, 79, 79, 79, 77, 76, 74]
+1 8 9 2 4 3 5 7 6
+2 4 7 6 5 8 3 1 9
+3 5 6 9 7 1 2 4 8
+9 3 4 8 1 7 6 2 5
+5 6 2 3 9 4 1 8 7
+7 1 8 5 2 6 9 3 4
+4 9 1 7 3 5 8 6 2
+6 7 5 1 8 2 4 9 3
+8 2 3 4 6 9 7 5 1
+</code></pre>
+</div>
+
+<p>Which matches up with the given solution! :D</p>
+
+<p><img src="https://artificialcognition.files.wordpress.com/2016/03/screen-region-2016-02-24-at-22-40-57.png?w=600" alt="Screen Region 2016-02-24 at 22.40.57" /></p>
+
+<p>Without further ado, here’s the final code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">random</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="s">"180003070000008000306070240004000600002000007000000030401700060005082400000069000"</span>
+
+<span class="n">mutation_rate</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">2000</span>
+
+<span class="k">class</span> <span class="nc">Solution</span><span class="p">:</span>
+    <span class="s">"""DNA of solution"""</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">flatpossibles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">possibles</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                <span class="n">flatpossibles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">81</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">==</span> <span class="s">"0"</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">flatpossibles</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+
+    <span class="c"># fills in the missing blocks into an unprocessed whole</span>
+    <span class="k">def</span> <span class="nf">reconstruct</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">81</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">==</span> <span class="s">'0'</span><span class="p">:</span>
+                <span class="n">y</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unprocessed</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="c"># transforms the unprocessed whole into a printable puzzle</span>
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># processes string into lists</span>
+        <span class="n">indx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">72</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unprocessed</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">processed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">81</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">in</span> <span class="n">indx</span><span class="p">:</span>
+                <span class="n">processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+                <span class="k">continue</span>
+            <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+        <span class="n">processed</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processed</span> <span class="o">=</span> <span class="n">processed</span>
+
+    <span class="k">def</span> <span class="nf">printPuzzle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="n">p</span><span class="p">))</span>
+
+    <span class="c"># fitness = sum of digits - the digits that are repeated</span>
+    <span class="c"># to ensure that the use of all digits is positively selected for</span>
+    <span class="c"># and the use of duplicates is negatively selected against</span>
+    <span class="k">def</span> <span class="nf">calcfitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reconstruct</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="p">()</span>
+
+        <span class="n">rowfit</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">colfit</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">squarefit</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed</span><span class="p">:</span>
+            <span class="n">rowfit</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">row</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">indx</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed</span><span class="p">:</span>
+                <span class="n">column</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">indx</span><span class="p">])</span>
+            <span class="n">colfit</span> <span class="o">+=</span>  <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">column</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">ys</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">)]:</span>
+            <span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">)]:</span>
+                <span class="n">square</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
+                        <span class="n">square</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
+                <span class="n">squarefit</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">square</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="p">(</span><span class="n">rowfit</span> <span class="o">+</span> <span class="n">colfit</span> <span class="o">+</span> <span class="n">squarefit</span><span class="p">)</span><span class="o">**</span><span class="mi">5</span><span class="o">/</span><span class="mi">10000000000</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Solution</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">)):</span>
+            <span class="n">child</span><span class="o">.</span><span class="n">missing</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="n">partner</span><span class="o">.</span><span class="n">missing</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">child</span>
+        <span class="s">"""
+
+        midpoint = random.randint(0, len(self.missing))
+        for i in xrange(len(self.missing)):
+            if i &amp;amp;gt;= midpoint:
+                child.missing[i] = self.missing[i]
+            else:
+                child.missing[i] = partner.missing[i]
+        return child
+        """</span>
+
+    <span class="k">def</span> <span class="nf">processnofixed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># create a dictionary of the missing (index : missing-digit)</span>
+        <span class="n">unprocessednofixed</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">81</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">==</span> <span class="s">'0'</span><span class="p">:</span>
+                <span class="n">unprocessednofixed</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">missing</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c"># create a list of missing w/o the fixed</span>
+        <span class="n">missingnofixed</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">81</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">unprocessednofixed</span><span class="p">:</span>
+            <span class="n">missingnofixed</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">unprocessednofixed</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+        <span class="c"># processes string into lists</span>
+        <span class="n">indx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">72</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">missingnofixed</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">processed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">81</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">in</span> <span class="n">indx</span><span class="p">:</span>
+                <span class="n">processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+                <span class="k">continue</span>
+            <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+        <span class="n">processed</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span> <span class="o">=</span> <span class="n">processed</span>
+
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">lt</span><span class="p">;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="c"># swap only if both are missing numbers</span>
+                <span class="n">both</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">while</span> <span class="n">both</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">b</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+                        <span class="n">d</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                        <span class="c"># 0s are fixed numbers</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">c</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">d</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>   <span class="c"># IMPORTANT CHANGE IT</span>
+                            <span class="n">row</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+                            <span class="n">row</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+                            <span class="n">both</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">for</span> <span class="n">indx</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+            <span class="n">column</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span><span class="p">:</span>
+                <span class="n">column</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">indx</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                <span class="n">both</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">while</span> <span class="n">both</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">b</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">column</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+                        <span class="n">d</span> <span class="o">=</span> <span class="n">column</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">c</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">d</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                            <span class="n">column</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+                            <span class="n">column</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+                            <span class="n">both</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span><span class="p">:</span>
+                    <span class="n">r</span><span class="p">[</span><span class="n">indx</span><span class="p">]</span> <span class="o">=</span> <span class="n">column</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">del</span> <span class="n">column</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">ys</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">)]:</span>
+            <span class="k">for</span> <span class="n">xs</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">6</span><span class="p">),</span><span class="nb">xrange</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">9</span><span class="p">)]:</span>
+                <span class="n">square</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
+                        <span class="n">square</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutation_rate</span><span class="p">:</span>
+                    <span class="n">both</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">while</span> <span class="n">both</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+                        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+                        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="n">b</span><span class="p">:</span>
+                            <span class="n">c</span> <span class="o">=</span> <span class="n">square</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+                            <span class="n">d</span> <span class="o">=</span> <span class="n">square</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+                            <span class="k">if</span> <span class="p">(</span><span class="n">c</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">d</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                                <span class="n">square</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span>
+                                <span class="n">square</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+                                <span class="n">both</span> <span class="o">=</span> <span class="bp">True</span>
+
+                    <span class="c"># put square back into processsednofixed</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">square</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="k">del</span> <span class="n">square</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">fill</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processednofixed</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">y</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">fill</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">missing</span> <span class="o">=</span> <span class="n">fill</span>
+
+<span class="n">indx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">9</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">72</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span>
+<span class="n">p</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">processed</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">81</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">in</span> <span class="n">indx</span><span class="p">:</span>
+        <span class="n">processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+        <span class="k">continue</span>
+    <span class="n">temp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">x</span><span class="p">]))</span>
+<span class="n">processed</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+<span class="n">possibles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">])</span>
+    <span class="n">possibles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">processed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">processed</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">fixed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fixed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fixed</span><span class="p">:</span>
+                <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">fixed</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">column</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">column</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">fixed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fixed</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">possibles</span><span class="p">[</span><span class="n">y</span><span class="p">][</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">except</span> <span class="nb">ValueError</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+<span class="k">print</span> <span class="n">possibles</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Solution</span><span class="p">())</span>
+
+<span class="n">gen</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">cycle</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">bests</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">10</span>
+
+<span class="k">def</span> <span class="nf">maxfit</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">fitness</span>
+
+<span class="n">solutionfound</span> <span class="o">=</span> <span class="bp">False</span>
+
+<span class="n">totalbests</span> <span class="o">=</span> <span class="mi">0</span> 
+
+<span class="k">while</span> <span class="n">solutionfound</span> <span class="o">==</span> <span class="bp">False</span><span class="p">:</span>
+
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">i</span><span class="o">.</span><span class="n">calcfitness</span><span class="p">()</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cycle</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">avg</span> <span class="o">=</span> <span class="n">totalbests</span><span class="o">/</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">avg</span> <span class="o">=</span> <span class="n">totalbests</span><span class="o">/</span><span class="p">(</span><span class="n">cycle</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">"Cycle: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span> <span class="o">+</span> <span class="s">" Gen "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gen</span><span class="p">)</span> <span class="o">+</span> <span class="s">": "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span> <span class="o">+</span> <span class="s">" Average Gen/Cycle: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">avg</span><span class="p">)</span>
+    <span class="n">currentbest</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">fitness</span>
+    <span class="n">bests</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">currentbest</span><span class="p">)</span>
+    <span class="n">bests</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+    <span class="k">print</span> <span class="n">bests</span>
+    <span class="nb">max</span><span class="p">(</span><span class="n">population</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">maxfit</span><span class="p">)</span><span class="o">.</span><span class="n">printPuzzle</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">processnofixed</span><span class="p">()</span>
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span>
+
+    <span class="c"># if it has reached a local minima, reset</span>
+    <span class="k">if</span> <span class="n">bests</span> <span class="o">==</span> <span class="p">[</span><span class="n">currentbest</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">totalbests</span> <span class="o">+=</span> <span class="n">currentbest</span>
+        <span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span>
+            <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Solution</span><span class="p">())</span>
+        <span class="n">cycle</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">gen</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">gen</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c"># stop if solution is found</span>
+    <span class="k">if</span> <span class="n">currentbest</span> <span class="o">==</span> <span class="mi">84</span><span class="p">:</span>
+        <span class="n">solutionfound</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="c"># restart at local minima</span>
+<span class="c"># change mutation</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/a-triumph-for-ai" title="NEXT: Thoughts: A Triumph For Artificial Intelligence">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/bees-and-ants-individually-dumb-collectively-smart" title="PREV: Thoughts: The Fascinating Intelligence of Bees and Ants">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Making an AI that Plays Tic Tac Toe</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Making an AI that Plays Tic Tac Toe" />
+<meta name="twitter:description" content="I’ve been reading about Blondie24: Playing at the Edge of AI, which is about a neural network that is trained to play checkers, by playing against itself and using an genetic algorithm. I haven’t f...">
+
+<meta name="description" content="I’ve been reading about Blondie24: Playing at the Edge of AI, which is about a neural network that is trained to play checkers, by playing against itself and...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/tic-tac-toe">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Making an AI that Plays Tic Tac Toe</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>I’ve been reading about <a href="http://www.amazon.com/Blondie24-Playing-Kaufmann-Artificial-Intelligence/dp/1558607838">Blondie24: Playing at the Edge of AI</a>, which is about a neural network that is trained to play checkers, by playing against itself and using an genetic algorithm. I haven’t finished the book yet, but so far it’s pretty good. I think I’d like to do something like that, but I’m gonna start out small. Thus, <strong>Tic Tac Toe</strong>. It’s pretty easy, and I spent a little while today just making the framework first.</p>
+
+<p>Here’s the code which basically checks for who wins and prints the board, I’ll do the rest over the next few days maybe:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">grid</span> <span class="o">=</span> <span class="p">[[</span><span class="s">" "</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mi">3</span>
+
+<span class="k">def</span> <span class="nf">check</span><span class="p">():</span> <span class="c">#checks to see if someone has won</span>
+             <span class="c"># if won, returns player, if not, returns None, if tie, returns "tie"</span>
+
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>  <span class="c"># checks row</span>
+        <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span> <span class="o">=</span> <span class="n">row</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="n">y</span> <span class="o">==</span> <span class="n">z</span> <span class="o">!=</span> <span class="s">" "</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>  <span class="c"># checks columns</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
+        <span class="n">second</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
+        <span class="n">third</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">b</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">first</span> <span class="o">==</span> <span class="n">second</span> <span class="o">==</span> <span class="n">third</span> <span class="o">!=</span> <span class="s">" "</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">first</span>
+
+    <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">grid</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">grid</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="s">" "</span><span class="p">:</span>  <span class="c"># checks diagonal</span>
+        <span class="k">return</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">grid</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">grid</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s">" "</span><span class="p">:</span> 
+        <span class="k">return</span> <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>              <span class="c"># checks for a tie</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">c</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">d</span> <span class="o">==</span> <span class="s">" "</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s">"tie"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>   <span class="c"># when none of the checks work, return a none</span>
+
+<span class="k">def</span> <span class="nf">printgrid</span><span class="p">():</span> <span class="c"># prints out the grid</span>
+    <span class="k">print</span> <span class="s">" _________________"</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">"|     |     |     |"</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">"|  "</span> <span class="o">+</span> <span class="n">y</span> <span class="o">+</span> <span class="s">" "</span><span class="p">,</span>
+        <span class="k">print</span> <span class="s">"|</span><span class="se">\n</span><span class="s">|_____|_____|_____|"</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/fail" title="NEXT: Thoughts: Failure...">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/so-far" title="PREV: What I Have Done So Far">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

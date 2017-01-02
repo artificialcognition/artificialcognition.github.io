@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Smart Ships Part 3</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Smart Ships Part 3" />
+<meta name="twitter:description" content="So today I was playing with the ships, because it was so cool. I tried to add some things, by myself, to it such as obstacles and a success scoreboard.">
+
+<meta name="description" content="So today I was playing with the ships, because it was so cool. I tried to add some things, by myself, to it such as obstacles and a success scoreboard.">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/problems-and-fun">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Smart Ships Part 3</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>So today I was playing with the ships, because it was so cool. I tried to add some things, by myself, to it such as obstacles and a success scoreboard.</p>
+
+<p><strong>Problem #1: Somehow, the ships managed to make it through the obstacle.</strong></p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-15-at-21-16-27.png"><img src="https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-15-at-21-16-27.png?w=290" alt="They could go through walls.... O.o" /></a></p>
+
+<p>The ships could go through walls…</p>
+
+<p>For some inexplicable reason, so it seemed, some of the ships were passing through the barrier while others didn’t. I tried extending the wall from x &gt; 0 to x &gt; -2000, just to make sure that none of the ships were slipping through that way. This problem still occurred, so I found out that it was the way my code was written, which allowed the location of the ship to change before it could stop the ship. And, when the ship has already passed the wall, it will carry on as if there wasn’t one to begin with. Thus, instead of rewriting the code, I decided to just make the wall thicker, so that the ship wouldn’t pass through in a single cycle.</p>
+
+<p><strong>Pro</strong><strong>blem #2: The ships counter was acting weird.</strong></p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-15-at-21-26-56.png"><img src="https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-15-at-21-26-56.png?w=289" alt="272 successes when there were only 100 ships? " /></a></p>
+
+<p>272 successes when there were only 50 ships?</p>
+
+<p>I turned off the wall, to save time. But the success counter just went up really weirdly. I realised that it was cos of a stupid mistake. I made the counter increment every time the frame refreshed and it didn’t reset until a new cycle, therefore accounting for the massive digit. That was fixed easily.</p>
+
+<p><strong>Problem #3: The ships were not getting on target. </strong></p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-15-at-22-06-54.png">(https://artificialcognition.files.wordpress.com/2015/01/screen-region-2015-01-15-at-22-06-54.png?w=289)</a></p>
+
+<p>They keep hitting the wall.</p>
+
+<p>No matter how many cycles, for some populations, the ships seem to never progress beyond hitting the walls. For other populations, the ships eventually reach the target. I attribute this to the initial genes of the population and the low rate of mutation.</p>
+
+<p>By increasing the population from 50 to 100, I allowed greater chances of success, and by altering the obstacle so that it was a bit lower and shorter allowed the ships to get through it easier. Also, by making the wall a bit lower allowed the ships that hit it, to have a lower fitness and therefore a smaller effect on the mating pool.</p>
+
+<p>I also decreased the mutation rate to 0.005 in order to lower variation.</p>
+
+<p><strong>Final Simulation (click to view the whole thing):</strong></p>
+
+<p><a href="https://artificialcognition.files.wordpress.com/2015/01/shipsobstacle.gif"><img src="https://artificialcognition.files.wordpress.com/2015/01/shipsobstacle.gif?w=286" alt="shipsobstacle" /></a></p>
+
+<p>As you can see, like before, the ships initially accelerated in random directions. Eventually, a lone ship who has somehow, either by mutation or some combination of genes, gone past the wall. In the next cycle, there are more ships that get closer and more, until eventually, most get to the target. The success counter is still a bit erroneous because it only takes into account the ships that reach the depot in the cycle and not those that would have reached it given just a bit more time. This is why the success rate is a bit low, even though most of the ships can be extrapolated to reach the target.</p>
+
+<p><strong>Final Code:</strong></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">pygame</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">numpy</span><span class="o">,</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">pygame.locals</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="n">FPS</span> <span class="o">=</span> <span class="mi">100</span> <span class="c"># controls how fast each frame goes</span>
+<span class="n">fpsClock</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+
+<span class="c"># set up the window</span>
+<span class="n">DISPLAYSURF</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s">'Ship'</span><span class="p">)</span>
+
+<span class="c"># basic setup</span>
+<span class="n">WHITE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+<span class="n">shipImg</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">'ship.png'</span><span class="p">)</span>
+<span class="n">depot</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">'depot.gif'</span><span class="p">)</span>
+
+<span class="n">fontObj</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="s">'freesansbold.ttf'</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">DNA</span><span class="p">:</span>
+    <span class="s">"""genotype for the ships"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">genes</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])]</span><span class="o">*</span><span class="n">lifetime</span> <span class="c"># creates a vector for every "frame"</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">lifetime</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> 
+            <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+
+<span class="k">class</span> <span class="nc">Ship</span><span class="p">:</span>
+    <span class="s">"""A ship"""</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">400</span><span class="p">])</span> <span class="c"># initial location at bottom left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="c"># not moving</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span> <span class="c"># not accelerating</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dna</span> <span class="o">=</span> <span class="n">DNA</span><span class="p">()</span> <span class="c"># each ship has a genotype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="bp">False</span> 
+
+    <span class="k">def</span> <span class="nf">applyForce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="o">+=</span> <span class="n">f</span> 
+
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="c"># so that velocity adds up</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">velocity</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">acceleration</span> <span class="o">*=</span> <span class="mi">0</span> <span class="c"># resets the acceleration</span>
+
+    <span class="k">def</span> <span class="nf">fitness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">location</span><span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">247</span><span class="p">,</span> <span class="mi">96</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="n">d</span><span class="p">)</span> <span class="c"># the smaller the distance, the greater the fitness</span>
+
+    <span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span> <span class="c"># creates a child from two parents</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">Ship</span><span class="p">()</span>
+        <span class="n">midpoint</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">midpoint</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">child</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">child</span>
+    
+    <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c"># mutates the genes randomly</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">mutationrate</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> 
+                <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+
+<span class="n">lifetime</span> <span class="o">=</span> <span class="mi">110</span> <span class="c"># how many frames there are, per cycle</span>
+<span class="n">lifecounter</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">cyclecounter</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">shipscounter</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c"># location of depot</span>
+<span class="n">depotx</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">depoty</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">population_no</span> <span class="o">=</span> <span class="mi">100</span> <span class="c"># number of ships</span>
+<span class="n">mutationrate</span> <span class="o">=</span> <span class="mf">0.005</span> <span class="c"># rate of mutation of genes</span>
+
+<span class="n">population</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">population_no</span><span class="p">):</span> <span class="c"># creates an array of Ships</span>
+    <span class="n">population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Ship</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">cycle</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span> <span class="c"># calculates fitness for all population</span>
+        <span class="n">i</span><span class="o">.</span><span class="n">fitness</span><span class="p">()</span>
+
+    <span class="n">mating_pool</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fitness</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span> <span class="c"># adds Ships into mating pool based on fitness</span>
+            <span class="n">mating_pool</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">population</span><span class="p">)):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mating_pool</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">parent_a</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+        <span class="n">parent_b</span> <span class="o">=</span> <span class="n">mating_pool</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+
+        <span class="n">child</span> <span class="o">=</span> <span class="n">parent_a</span><span class="o">.</span><span class="n">crossover</span><span class="p">(</span><span class="n">parent_b</span><span class="p">)</span> <span class="c"># creates child based on fitness</span>
+
+        <span class="n">child</span><span class="o">.</span><span class="n">mutate</span><span class="p">()</span>
+        <span class="n">population</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">child</span> <span class="c"># replaces the parent with the child</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span> <span class="c"># the main loop</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">WHITE</span><span class="p">)</span>
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">depot</span><span class="p">,</span> <span class="p">(</span><span class="n">depotx</span><span class="p">,</span> <span class="n">depoty</span><span class="p">))</span>
+    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="n">depotx</span><span class="p">,</span> <span class="n">depoty</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">,),</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">pygame</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">rect</span><span class="p">(</span><span class="n">DISPLAYSURF</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">250</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+
+    <span class="n">textSurfaceObj</span> <span class="o">=</span> <span class="n">fontObj</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s">"Cycle: "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">cyclecounter</span><span class="p">)</span> <span class="o">+</span> <span class="s">"        Last Cycle Successes:"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">shipscounter</span><span class="p">),</span> <span class="bp">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">textRectObj</span> <span class="o">=</span> <span class="n">textSurfaceObj</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+    <span class="n">textRectObj</span><span class="o">.</span><span class="n">bottomright</span> <span class="o">=</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+
+    <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">textSurfaceObj</span><span class="p">,</span> <span class="n">textRectObj</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">lifecounter</span> <span class="o">&lt;</span> <span class="n">lifetime</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+            <span class="c"># if any ship is in rectangle, then it's on target and stops moving</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">depotx</span><span class="o">-</span><span class="mi">32</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">depotx</span><span class="o">+</span><span class="mi">96</span><span class="o">-</span><span class="mi">32</span><span class="p">)</span> <span class="ow">and</span> 
+            <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">depoty</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">depoty</span><span class="o">+</span><span class="mi">80</span><span class="p">)):</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="k">elif</span> <span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">10000</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">218</span><span class="p">)</span> <span class="ow">and</span> 
+            <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">300</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">332</span><span class="p">)):</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="bp">True</span>
+            
+            <span class="c">#if not, then the ships keep accelerating per frame</span>
+            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">!=</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">applyForce</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">dna</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">lifecounter</span><span class="p">])</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+                <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shipImg</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">DISPLAYSURF</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">shipImg</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">)</span>
+        <span class="n">lifecounter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lifecounter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">cyclecounter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">shipscounter</span> <span class="o">=</span> <span class="mi">0</span> 
+                
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">population</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">depotx</span><span class="o">-</span><span class="mi">32</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">depotx</span><span class="o">+</span><span class="mi">96</span><span class="o">-</span><span class="mi">32</span><span class="p">)</span> <span class="ow">and</span> 
+            <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">depoty</span> <span class="ow">and</span> <span class="n">s</span><span class="o">.</span><span class="n">location</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">depoty</span><span class="o">+</span><span class="mi">80</span><span class="p">)):</span>
+                <span class="n">shipscounter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">cycle</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="nb">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="n">sys</span><span class="o">.</span><span class="nb">exit</span><span class="p">()</span>
+
+    <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">fpsClock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="n">FPS</span><span class="p">)</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/boxcar2d-idea" title="NEXT: Thoughts: BoxCar2D">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/my-ships-come-in" title="PREV: Project: Smart Ships Part 2">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>

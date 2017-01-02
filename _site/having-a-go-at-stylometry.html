@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Stylometry Part 1</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Stylometry Part 1" />
+<meta name="twitter:description" content="I’ve decided to look into natural language parsing, since I’ve always been interested in it. Have you seen cleverbot? It’s pretty cool. Anyway.. I managed to install TextBlob which is a natural lan...">
+
+<meta name="description" content="I’ve decided to look into natural language parsing, since I’ve always been interested in it. Have you seen cleverbot? It’s pretty cool. Anyway.. I managed to...">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/having-a-go-at-stylometry">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Stylometry Part 1</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>I’ve decided to look into natural language parsing, since I’ve always been interested in it. Have you seen cleverbot? It’s pretty cool. Anyway.. I managed to install <a href="http://textblob.readthedocs.org/en/dev/index.html#">TextBlob</a> which is a natural language processor and went out and looked for cool things to start off making. I found <a href="http://stackoverflow.com/questions/1793516/ideas-for-natural-language-processing-project">this</a> and decided to make a program that compares two texts to see if it can figure out if they have the same author.</p>
+
+<p>So, I looked into this field and it turns out that it’s called stylometry. I further found out about writer invariant and apparently it’s a property that each author has. It’s not agreed what this property is exactly but apparently “function words” are promising because they are used unconsciously. I then found <a href="http://www.biostat.jhsph.edu/~rpeng/papers/archive/authorship-tas2-final.pdf">this article</a> which expanded on it.</p>
+
+<p>The function words used in that article are: a, all, also, an, and, any, are, as, at, be, been, but, by, can, do, down, even, every, for, from, had, has, have, her, his, if, in, into, is, it, its, may, more, must, my, no, not, now, of, on, one, only, or, our, should, so, some, such, than, that, the, their, then, there, things, this, to, up, upon, was, were, what, when, which, who, will, with, would, your.</p>
+
+<p>Looking at this <a href="https://www.google.co.nz/url?sa=t&amp;rct=j&amp;q=&amp;esrc=s&amp;source=web&amp;cd=1&amp;ved=0CBwQFjAA&amp;url=ftp%3A%2F%2Fftp.cis.upenn.edu%2Fpub%2Ftreebank%2Fdoc%2Ftagguide.ps.gz&amp;ei=8MFmVbaeNM_z8QX78oHgAQ&amp;usg=AFQjCNFypM4svb-9zBORHTQQCj1llAyBbg&amp;sig2=b5hBSrW_cQebsC0GDeAwjA&amp;bvm=bv.93990622,d.dGc">document</a>, I realised that these words weren’t really all of the same category. Hence I needed to know what their “corresponding tags” actually were. So:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">textblob</span> <span class="kn">import</span> <span class="n">TextBlob</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s">" a, all, also, an, and, any, are, as, at, be, been, but, by, can, do, down, even, every, for, from, had, has, have, her, his, if, in, into, is, it, its, may, more, must, my, no, not, now, of, on, one, only, or, our, should, so, some, such, than, that, the, their, then, there, things, this, to, up, upon, was, were, what, when, which, who, will, with, would, your"</span>
+
+<span class="n">blob</span> <span class="o">=</span> <span class="n">TextBlob</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+<span class="n">stuff</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">blob</span><span class="o">.</span><span class="n">tags</span><span class="p">:</span>
+    <span class="n">stuff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">stuff</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">i</span><span class="p">,</span> <span class="n">stuff</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></code></pre></figure>
+
+<p>It produced:</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>MD 6
+VB 1
+WRB 1
+JJ 1
+VBD 3
+CC 3
+WP 2
+VBN 1
+JJR 1
+TO 1
+CD 1
+VBP 3
+WDT 1
+PRP 1
+RB 8
+IN 15
+VBZ 2
+DT 9
+PRP$ 7
+NNS 1
+EX 1
+</code></pre>
+</div>
+
+<p>Therefore, I decided, instead of using all the categories, to look only for IN, DT, PRP$ and MD. These are Preposition or subordinating conjunction, Determiner, Possessive Pronoun, and Modal Verbs respectively.</p>
+
+<p>I started out focusing on just one text, Oliver Twist by Charles Dickens, available free online. I also focused on getting the INs from the text and getting a set of words.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">textblob</span> <span class="kn">import</span> <span class="n">TextBlob</span>
+
+<span class="n">ot</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">"olivertwist.txt"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span>
+
+<span class="n">ottext</span> <span class="o">=</span> <span class="n">TextBlob</span><span class="p">(</span><span class="n">ot</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+<span class="n">otwc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ottext</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>         <span class="c"># wordcount for oliver twist</span>
+
+<span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="s">'IN'</span><span class="p">,</span> <span class="s">'DT'</span><span class="p">,</span> <span class="s">'PRP$'</span><span class="p">,</span> <span class="s">'MD'</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">'IN'</span>
+
+<span class="n">IN</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">ottext</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">IN</span><span class="p">)):</span>
+    <span class="n">IN</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">IN</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span><span class="n">IN</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">blah</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">blah</span><span class="p">:</span>
+    <span class="k">print</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></code></pre></figure>
+
+<p>That worked, way faster than I thought it would (considering the novels ~170,000 words). So I decided to expand it and get it working with Great Expectations, also by Charles Dickens.</p>
+
+<p>This is the complete code, and gives a result of an average percentage difference of 68.1%:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">textblob</span> <span class="kn">import</span> <span class="n">TextBlob</span>
+
+<span class="n">first</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">"olivertwist.txt"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span>
+<span class="n">firsttext</span> <span class="o">=</span> <span class="n">TextBlob</span><span class="p">(</span><span class="n">first</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<span class="n">firstwc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">firsttext</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>         <span class="c"># wordcount for oliver twist</span>
+
+<span class="n">second</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">"greatexpectations.txt"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span>
+<span class="n">secondtext</span> <span class="o">=</span> <span class="n">TextBlob</span><span class="p">(</span><span class="n">second</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+<span class="n">secondwc</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">secondtext</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>          <span class="c"># wordcount for great expectations</span>
+
+<span class="n">targets</span> <span class="o">=</span> <span class="p">[</span><span class="s">'IN'</span><span class="p">,</span> <span class="s">'DT'</span><span class="p">,</span> <span class="s">'PRP$'</span><span class="p">,</span> <span class="s">'MD'</span><span class="p">]</span>
+
+<span class="n">firstwords</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">secondwords</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span> <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">target</span>
+    
+    <span class="n">firsttags</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">firsttext</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>   <span class="c"># gets the targeted tags</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">firsttags</span><span class="p">)):</span>
+        <span class="n">firsttags</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">firsttags</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span><span class="n">firsttags</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>   <span class="c"># reduces to lowercase</span>
+    
+    <span class="n">secondtags</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">secondtext</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>   <span class="c"># gets the targeted tags</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">secondtags</span><span class="p">)):</span>
+        <span class="n">secondtags</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">secondtags</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span><span class="n">secondtags</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>   <span class="c"># reduces to lowercase</span>
+
+    <span class="n">firsttags_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">firsttags</span><span class="p">)</span>
+    <span class="n">secondtags_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">secondtags</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">firsttags_set</span><span class="p">:</span>
+        <span class="n">firstwords</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">firsttags</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">firstwc</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span>  
+        <span class="c"># freq in 1000 words</span>
+    
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">secondtags_set</span><span class="p">:</span>
+        <span class="n">secondwords</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">secondtags</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">))</span><span class="o">/</span><span class="n">secondwc</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span>  
+        <span class="c"># freq in 1000 words</span>
+
+<span class="n">difference</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">number</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">firstwords</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">secondwords</span><span class="p">:</span>
+        <span class="n">number</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="p">[</span><span class="n">firstwords</span><span class="p">[</span><span class="n">word</span><span class="p">],</span> <span class="n">secondwords</span><span class="p">[</span><span class="n">word</span><span class="p">]]</span>
+        <span class="n">percentchange</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">-</span><span class="nb">min</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span><span class="o">/</span><span class="nb">min</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+        <span class="n">difference</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">percentchange</span><span class="p">)</span>
+<span class="n">summed</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">difference</span><span class="p">:</span>
+    <span class="n">summed</span> <span class="o">+=</span> <span class="n">x</span>
+
+<span class="k">print</span> <span class="n">summed</span><span class="o">/</span><span class="n">number</span></code></pre></figure>
+
+<p>I still haven’t tested out the cut-off limit for different authors. So I guess I’ll try it out tomorrow. Can’t wait, that was pretty fun and satisfying to make!</p>
+
+
+</article>
+
+<div class="page-navigation">
+	
+    <a class="next" href="/testing-stylometry" title="NEXT: Project: Stylometry (Results) Part 2">&lt;&lt;</a>
+		<span> &middot; </span>
+  
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/creatures-part-5" title="PREV: Project: Autonomous Creatures Part 5">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>
