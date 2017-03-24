@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+	<title>Project: Is it edible?</title>
+
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@" />
+<meta name="twitter:title" content="Project: Is it edible?" />
+<meta name="twitter:description" content="Exams are over, so I’ve decided to post some of the projects I’ve made, but haven’t posted on here.">
+
+<meta name="description" content="Exams are over, so I’ve decided to post some of the projects I’ve made, but haven’t posted on here.">
+
+
+
+<link rel="icon" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/touch-icon.png">
+<link href="https://fonts.googleapis.com/css?family=Karla" rel="stylesheet">
+<link rel="stylesheet" href="/assets/core.css">
+<link rel="canonical" href="/is-it-edible">
+<link rel="alternate" type="application/atom+xml" title="Artificial Cognition" href="/feed.xml" />
+
+
+
+   
+	</head>
+
+	<body>
+
+		<aside class="logo">
+
+	
+
+	<a href="/">
+		<img src="/../walle.png" class="gravatar">
+	</a>
+	<span class="logo-prompt">Back to Home</span>
+
+</aside>
+
+
+		<main>
+			<article>
+
+	<div class="center">
+		<h1>Project: Is it edible?</h1>
+	</div>
+
+	<div class="divider"></div>
+
+	<p>Exams are over, so I’ve decided to post some of the projects I’ve made, but haven’t posted on here.</p>
+
+<p>This was one that I made at SB Hacks, my first hackathon! Great times, new friends, and so much cool stuff! It was definitely an experience I won’t forget!</p>
+
+<p>Anyway, I was playing around with the <a href="https://www.clarifai.com">Clarifai</a> API, which does image recognition, and I got the idea to combine this API with <a href="https://wordnet.princeton.edu">Wordnet</a>, to create a program that can tell if something is edible.</p>
+
+<p>Basically, it takes in an image, uses Clarifai to generate a set of terms that it thinks best describes the image (Computer Vision is awesome!), then looks it up in Wordnet, finds out if these words are in the “Food” category, then returns the probability that it’s edible.</p>
+
+<p>An example:
+Let’s say I have this cake image in the same folder as the code, named “cake.jpg”
+<img src="http://localhost:4000/assets/cake.jpg" alt="here" /></p>
+
+<p>Then, I can run the code as so:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">python</span> <span class="n">edible</span><span class="o">.</span><span class="n">py</span> <span class="n">cake</span><span class="o">.</span><span class="n">jpg</span></code></pre></figure>
+
+<p>It will give the output:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="p">[</span><span class="s">'chocolate'</span><span class="p">,</span> <span class="s">'cake'</span><span class="p">,</span> <span class="s">'sweet'</span><span class="p">]</span>
+<span class="n">I</span><span class="s">'m at least 99.382865</span><span class="si">% </span><span class="s">certain that'</span><span class="n">s</span> <span class="n">edible</span><span class="err">!</span> <span class="p">:</span><span class="n">D</span> <span class="n">Eat</span> <span class="n">it</span><span class="err">!</span></code></pre></figure>
+
+<p>The first line of output is a list of possible objects in the image, which it is surprisingly accurate about. The second line is the calculated probility that the object depicted in the image is edible, and it’s right! Of course a cake is perfectly edible!</p>
+
+<p>This was just a fun little experiment; nothing too difficult. So here’s the code:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">clarifai.rest</span> <span class="kn">import</span> <span class="n">ClarifaiApp</span>
+<span class="kn">from</span> <span class="nn">clarifai.rest</span> <span class="kn">import</span> <span class="n">Image</span> <span class="k">as</span> <span class="n">ClImage</span>
+<span class="kn">from</span> <span class="nn">nltk.corpus</span> <span class="kn">import</span> <span class="n">wordnet</span> <span class="k">as</span> <span class="n">wn</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">filename</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">ClarifaiApp</span><span class="p">(</span><span class="s">"oDbaG5DlF5P9jnG82suYYjD6_gL60wpapw0EQV5h"</span><span class="p">,</span> 
+        <span class="s">"c65ZCtwa2IcaoI7OGR-9mjVrDoY8NLUnwszio8yF"</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">"general-v1.3"</span><span class="p">)</span>
+
+<span class="c"># prediction:</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">ClImage</span><span class="p">(</span><span class="n">file_obj</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">))</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">image</span><span class="p">])</span>
+
+
+<span class="n">analysed</span> <span class="o">=</span> <span class="p">[[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s">"name"</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s">"value"</span><span class="p">])]</span> <span class="k">for</span> <span class="n">x</span> 
+        <span class="ow">in</span> <span class="n">t</span><span class="p">[</span><span class="s">"outputs"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">"data"</span><span class="p">][</span><span class="s">"concepts"</span><span class="p">]]</span>
+
+<span class="n">guesses</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">analysed</span><span class="p">][:</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="k">print</span> <span class="n">guesses</span>
+
+<span class="n">sub_defs</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">guesses</span><span class="p">:</span>
+    <span class="n">sub_defs</span> <span class="o">+=</span> <span class="n">wn</span><span class="o">.</span><span class="n">synsets</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+
+<span class="n">hypernyms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">sub_defs</span><span class="p">:</span>
+    <span class="n">hypernyms</span> <span class="o">+=</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">hypernym_paths</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="n">wn</span><span class="o">.</span><span class="n">synset</span><span class="p">(</span><span class="s">'food.n.01'</span><span class="p">)</span> <span class="ow">in</span> <span class="n">hypernyms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">wn</span><span class="o">.</span><span class="n">synset</span><span class="p">(</span><span class="s">'food.n.02'</span><span class="p">)</span> <span class="ow">in</span> <span class="n">hypernyms</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">wn</span><span class="o">.</span><span class="n">synset</span><span class="p">(</span><span class="s">'food.n.03'</span><span class="p">)</span> <span class="ow">in</span> <span class="n">hypernyms</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">"I'm at least "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">analysed</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="s">"</span><span class="si">% </span><span class="s">certain that's edible! :D Eat it!"</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">"I'm at least "</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">analysed</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span> <span class="o">+</span> <span class="s">"</span><span class="si">% </span><span class="s">certain you shouldn't eat it! :("</span></code></pre></figure>
+
+
+
+</article>
+
+<div class="page-navigation">
+	
+		<a class="home" href="/" title="Back to Homepage">Home</a>
+  
+		<span> &middot; </span>
+    <a class="prev" href="/using-genetic-algorithms-to-generate-DNA-art" title="PREV: Project: Using Genetic Algorithms to Create DNA Art">&gt;&gt;</a>
+  
+</div>
+
+		</main>
+
+		<div class="footer">
+  <span class="block">Made with &hearts; using <a href="http://jekyllrb.com/">Jekyll</a> &amp; <a href="https://github.com/heiswayi/the-plain" title="The Plain theme by Heiswayi Nrird">The Plain</a> </span>
+  <span class="block">&copy; 2017 </span>
+</div>
+
+
+	</body>
+
+</html>
